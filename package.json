@@ -1,0 +1,27 @@
+{
+  "name": "hypermarket",
+  "version": "0.0.0",
+  "description": "Marketplace for selling and buying hypercores",
+  "main": "market.js",
+  "dependencies": {
+    "@hyperswarm/network": "0.0.3",
+    "duplex-json-stream": "^1.0.1",
+    "hypercore": "^6.19.2",
+    "hypercore-crypto": "^1.0.0",
+    "hypercore-multi-key": "^1.0.1",
+    "hypercore-protocol": "^6.7.1",
+    "hypertrie": "^3.1.0",
+    "pump": "^3.0.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mafintosh/hypermarket.git"
+  },
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mafintosh/hypermarket/issues"
+  },
+  "homepage": "https://github.com/mafintosh/hypermarket"
+}
