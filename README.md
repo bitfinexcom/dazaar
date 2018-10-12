@@ -102,13 +102,13 @@ instance. This is the remote key the seller sees in the validate function
 
 The seller public key.
 
-#### `buyer.on('feed', feed)
+#### `buyer.on('feed', feed)`
 
 Emitted when we have a feed.
 If we previously succesfully validated this is triggered right away.
 Otherwise it is triggerd after the first remote validation.
 
-#### `buyer.on('validate')
+#### `buyer.on('validate')`
 
 Emitted first time a remote validates us.
 
