@@ -24,12 +24,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mafintosh/hypermarket.git"
+    "url": "https://github.com/bitfinexcom/hypermarket.git"
   },
   "author": "Mathias Buus (@mafintosh)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mafintosh/hypermarket/issues"
+    "url": "https://github.com/bitfinexcom/hypermarket/issues"
   },
-  "homepage": "https://github.com/mafintosh/hypermarket"
+  "homepage": "https://github.com/bitfinexcom/hypermarket"
 }
