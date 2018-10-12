@@ -75,7 +75,7 @@ Options include:
 
 Get a list of all the buyers of this feed
 
-#### `seller.on('ready')
+#### `seller.on('ready')`
 
 Emitted when the seller is fully ready and has loaded it's keypair
 
