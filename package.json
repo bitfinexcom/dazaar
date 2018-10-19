@@ -15,7 +15,8 @@
     "noise-peer": "^0.2.0",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
-    "random-access-file": "^2.0.1"
+    "random-access-file": "^2.0.1",
+    "thunky": "^1.0.3"
   },
   "devDependencies": {
     "protocol-buffers": "^4.1.0",

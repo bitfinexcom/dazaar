@@ -8,10 +8,19 @@ const multikey = require('hypercore-multi-key')
 const pump = require('pump')
 const duplexify = require('duplexify')
 const raf = require('random-access-file')
+const thunky = require('thunky')
 const { EventEmitter } = require('events')
 const messages = require('./messages')
 
-module.exports = storage => new Market(storage)
+exports = module.exports = storage => new Market(storage)
+
+exports.isSeller = function (s) {
+  return s instanceof Seller
+}
+
+exports.isBuyer = function (b) {
+  return b instanceof Buyer
+}
 
 class Market extends EventEmitter {
   constructor (storage) {
@@ -23,6 +32,7 @@ class Market extends EventEmitter {
 
     const self = this
 
+    this.ready = thunky(this._ready.bind(this))
     this.ready(function (err) {
       if (err) self.emit('error', err)
       else self.emit('ready')
@@ -33,20 +43,13 @@ class Market extends EventEmitter {
     return this._keyPair && this._keyPair.publicKey
   }
 
-  ready (cb) {
-    if (this._keyPair) return process.nextTick(cb, null)
+  _ready (cb) {
     const self = this
-    this._db.get('buys/key-pair', function (err, node) {
+
+    loadKey(this._db, 'buys/key-pair', function (err, kp) {
       if (err) return cb(err)
-      if (self._keyPair) return cb(null)
-
-      if (node) {
-        self._keyPair = decodeKeys(node.value)
-        return cb(null)
-      }
-
-      self._keyPair = noise.keygen()
-      self._db.put('buys/key-pair', encodeKeys(self._keyPair), cb)
+      self._keyPair = kp
+      cb(null)
     })
   }
 
@@ -76,7 +79,7 @@ class Buyer extends EventEmitter {
       self._setFeed(Buffer.from(node.value.uniqueFeed, 'hex'))
     })
 
-    this._market.ready(function (err) {
+    this.ready(function (err) {
       if (err) self.emit('error', err)
       else self.emit('ready')
     })
@@ -84,6 +87,14 @@ class Buyer extends EventEmitter {
 
   get key () {
     return this._market.key
+  }
+
+  get discoveryKey () {
+    return hypercore.discoveryKey(this.seller)
+  }
+
+  ready (cb) {
+    this._market.ready(cb)
   }
 
   replicate () {
@@ -108,11 +119,10 @@ class Buyer extends EventEmitter {
       stream.on('error', noop)
       stream.once('readable', function () {
         const first = messages.Receipt.decode(stream.read())
-        if (first.invalid) return socket.destroy(new Error(first.invalid))
+        if (first.invalid) return self._destroy(new Error(first.invalid), socket)
+        const feed = self._setFeed(first.uniqueFeed)
 
-        const feed = self._setFeed(first.uniqueKey)
-
-        self.emit('validate', first.uniqueKey)
+        self.emit('validate', first.uniqueFeed)
 
         const p = protocol({
           extensions: [ 'hypermarket/invalid' ]
@@ -124,13 +134,18 @@ class Buyer extends EventEmitter {
           if (!p.feeds.length) return
           p.feeds[0].on('extension', function (name, data) {
             if (name === 'hypermarket/invalid') {
-              socket.destroy(new Error(data.toString()))
+              self._destroy(new Error(data.toString()), socket)
               p.destroy()
             }
           })
         })
       })
     })
+  }
+
+  _destroy (err, socket) {
+    socket.destroy(err)
+    this.emit('invalidate', err)
   }
 
   _setFeed (key) {
@@ -163,6 +178,7 @@ class Seller extends EventEmitter {
 
     const self = this
 
+    this.ready = thunky(this._ready.bind(this))
     this.ready(function (err) {
       if (err) self.emit('error', err)
       else self.emit('ready')
@@ -173,20 +189,19 @@ class Seller extends EventEmitter {
     return this._keyPair && this._keyPair.publicKey
   }
 
-  ready (cb) {
+  get discoveryKey () {
+    return this.key && hypercore.discoveryKey(this.key)
+  }
+
+  _ready (cb) {
     const self = this
     this.feed.ready(function (err) {
       if (err) return cb(err)
       const key = 'sales/' + self.feed.key.toString('hex') + '/key-pair'
-      self._db.get(key, function (err, node) {
+      loadKey(self._db, key, function (err, kp) {
         if (err) return cb(err)
-        if (self._keyPair) return cb(null)
-        if (node) {
-          self._keyPair = decodeKeys(node.value)
-          return cb(null)
-        }
-        self._keyPair = noise.keygen()
-        self._db.put(key, encodeKeys(self._keyPair), cb)
+        self._keyPair = kp
+        cb(null)
       })
     })
   }
@@ -326,3 +341,15 @@ function createStreamProxy () {
 }
 
 function noop () {}
+
+function loadKey (db, key, cb) {
+  db.get(key, function (err, node) {
+    if (err) return cb(err)
+    if (node) return cb(null, decodeKeys(node.value))
+    const keyPair = noise.keygen()
+    db.put(key, encodeKeys(keyPair), function (err) {
+      if (err) return cb(err)
+      cb(null, keyPair)
+    })
+  })
+}

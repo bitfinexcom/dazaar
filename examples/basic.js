@@ -1,6 +1,6 @@
 const hypercore = require('hypercore')
 const pump = require('pump')
-const market = require('./market')
+const market = require('../market')
 
 const m = market('./tmp')
 

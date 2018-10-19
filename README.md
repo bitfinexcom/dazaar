@@ -79,6 +79,10 @@ Get a list of all the buyers of this feed
 
 Emitted when the seller is fully ready and has loaded it's keypair
 
+#### `seller.discoveryKey`
+
+A hash of the sellers public key that can be used for discovery purposes.
+
 #### `seller.key`
 
 The public key of this seller. Needed to buy the data.
@@ -102,6 +106,10 @@ instance. This is the remote key the seller sees in the validate function
 
 The seller public key.
 
+#### `buyer.discoveryKey`
+
+A hash of the seller public key that can be used to discover the seller on a network.
+
 #### `buyer.on('feed', feed)`
 
 Emitted when we have a feed.
@@ -110,15 +118,34 @@ Otherwise it is triggerd after the first remote validation.
 
 #### `buyer.on('validate')`
 
-Emitted first time a remote validates us.
+Emitted first time a remote seller validates us.
+
+#### `buyer.on('invalidate', err)`
+
+Emitted when a remote seller invalidates us with the error they provided.
 
 #### `buyer.feed`
 
-The feed we bought
+The feed we bought.
+
+#### `bool = market.isSeller(instance)`
+
+Helper to determine if an instance is a seller.
+
+#### `bool = market.isBuyer(instance)`
+
+Helper to determine if an instance is a buyer.
 
 ## Swarm
 
-(TODO)
+A network swarm based on hyperswarm is included as `hypermarket/swarm`
+
+```js
+const swarm = require('hypermarket/swarm')
+
+swarm(buyer) // swarms the buyer
+swarm(seller) // swarms the seller
+```
 
 ## License
 
