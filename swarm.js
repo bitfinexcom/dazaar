@@ -4,8 +4,9 @@ const market = require('./')
 
 module.exports = swarm
 
-function swarm (m, onerror) {
-  const swarm = network()
+function swarm (m, onerror, opts) {
+  if (!opts) opts = {}
+  const swarm = network(opts)
 
   swarm.on('connection', function (socket) {
     const stream = m.replicate()
