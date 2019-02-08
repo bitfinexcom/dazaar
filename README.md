@@ -1,9 +1,9 @@
-# hypermarket
+# dazaar
 
 Share hypercores on a one to one basis like a marketplace
 
 ```
-npm install hypermarket
+npm install dazaar
 ```
 
 ## Usage
@@ -54,9 +54,9 @@ seller.on('ready', function () {
 
 ## API
 
-#### `const market = hypermarket(storage)`
+#### `const market = dazaar(storage)`
 
-Create a new hypermarket instance
+Create a new dazaar instance
 
 #### `const seller = market.sell(feed, options)`
 
@@ -138,10 +138,10 @@ Helper to determine if an instance is a buyer.
 
 ## Swarm
 
-A network swarm based on hyperswarm is included as `hypermarket/swarm`
+A network swarm based on hyperswarm is included as `dazaar/swarm`
 
 ```js
-const swarm = require('hypermarket/swarm')
+const swarm = require('dazaar/swarm')
 
 swarm(buyer) // swarms the buyer
 swarm(seller) // swarms the seller
