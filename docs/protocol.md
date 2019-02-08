@@ -86,4 +86,5 @@ with two different friends and now wanted to revoke one of them we would have to
 stop sharing with both and create a new one - not optimal.
 
 Obviously for something like a distributed market place where we want to able to sell
-data we needed a better solution.
+a subscription to a data feed, and revoke access to the same data feed if a customer
+is no longer paying for it we needed a better solution.
