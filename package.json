@@ -1,5 +1,5 @@
 {
-  "name": "hypermarket",
+  "name": "dazaar",
   "version": "0.0.0",
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
@@ -28,12 +28,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitfinexcom/hypermarket.git"
+    "url": "https://github.com/bitfinexcom/dazaar.git"
   },
   "author": "Mathias Buus (@mafintosh)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitfinexcom/hypermarket/issues"
+    "url": "https://github.com/bitfinexcom/dazaar/issues"
   },
-  "homepage": "https://github.com/bitfinexcom/hypermarket"
+  "homepage": "https://github.com/bitfinexcom/dazaar"
 }
