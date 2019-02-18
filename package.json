@@ -5,9 +5,7 @@
   "main": "market.js",
   "dependencies": {
     "@hyperswarm/network": "0.0.4",
-    "duplex-json-stream": "^1.0.1",
     "duplexify": "^3.6.0",
-    "fd-lock": "^1.0.2",
     "hypercore": "^6.19.2",
     "hypercore-crypto": "^1.0.0",
     "hypercore-multi-key": "^1.0.1",
