@@ -26,7 +26,7 @@ class Market extends EventEmitter {
   constructor (storage) {
     super()
 
-    this._storage = typeof storage === 'function' ? storage : name => raf(storage + '/' + name)
+    this._storage = typeof storage === 'function' ? storage : defaultStorage
     this._db = hypertrie(name => this._storage('db/' + name), { valueEncoding: 'json' })
     this._keyPair = null
 
@@ -37,6 +37,11 @@ class Market extends EventEmitter {
       if (err) self.emit('error', err)
       else self.emit('ready')
     })
+
+    function defaultStorage (name) {
+      const lock = name === 'db/bitfield' ? requireMaybe('fd-lock') : null
+      return raf(name, { directory: storage, lock })
+    }
   }
 
   get buyer () {
@@ -352,4 +357,12 @@ function loadKey (db, key, cb) {
       cb(null, keyPair)
     })
   })
+}
+
+function requireMaybe (name) {
+  try {
+    return require(name)
+  } catch (_) {
+    return null
+  }
 }
