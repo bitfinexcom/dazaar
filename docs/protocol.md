@@ -188,8 +188,8 @@ To purchase a data subscription the buyer provides payment using a payment metho
 has pre-shared. For example if they were to pay using a crypto currency they'd include their
 public key (S) in the transaction comment that is submitted to the corresponding block chain.
 
-The buyer then connects to the seller. To find each other they used the same DHT used by Hypercore
-to find and announce peers.
+The buyer then connects to the seller.
+To find each other they use a distributed discovery service (described below in the Discovery section).
 The seller announces their IP address under their public key (B) which the buyer uses to find
 the seller and the two peers establish a network connection between each other.
 
@@ -289,3 +289,61 @@ the key pair used to sign the Merkle Tree. By publisizing it, the key pair can n
 only have been used by the seller, making it non trust worthy. In this case the buyer can still re-share
 the data, but would have to sign it with a key pair the buyer generates by themself, invalidating that
 the data actually came from the seller.
+
+## Discovery
+
+To bootstrap a P2P system we usually need a way for two peers to find each other. Since we are dealing
+with a networked system a peer address boils down to an IP where their computer is located and a
+TCP/UDP port they are listening for traffic on. However two peers seldomly know others addresses up front.
+
+Instead, usually, a key or topic is shared instead describing a group of peers in the P2P system.
+In systems like BitTorrent, this key is called the info hash, or magnet link and in Hypercore we call this
+key the "Hypercore Discovery Key", but it tends to just be some preshared information that allow peers,
+without trusting eachother, to get an idea of wheather they are interested in the same data.
+
+In a centralised system, the way we normally map from a key -> IP:port is by purchasing a DNS
+record for the key and publishing the IP to a series of DNS servers. This method does not scale
+particulary well to P2P systems, DNS servers are built for much more permanent addresses than peers in
+a P2P system has.
+
+Therefore P2P systems tend to use a different systems.
+
+In Dazaar we used a discovery system called a Distributed Hash Table or DHT for short.
+A DHT is a data structure that efficiently allows peers to share key->value data withother by
+having each peer store a tiny portion of the overall data, whilst using a routing mechanism
+that allows you to find which peer is sharing what data without having to talk to many differnent
+peers (usually only `log(n)` peers).
+
+Dazaar uses a DHT based on Kademlia paper, https://pdos.csail.mit.edu/~petar/papers/maymounkov-kademlia-lncs.pdf
+called the HyperSwarm DHT, https://github.com/hyperswarm/dht
+
+Additionaly to support offline discovery multicast DNS is used on the local network a peer is connected
+to, to find other peers in our topic.
+
+## Hole punching and P2P connectivity
+
+One of the main features of the HyperSwarm DHT is that it solves another hard problem in regards to P2P discovery
+and connectivity, something called UDP hole punching.
+
+UDP hole punching is a mechanism where two peers behind a firewall can use a third peer that they both
+can connect to through their firewall, to exchange a series of messages that allow them to connect directly
+to eachother.
+
+Without UDP hole punching the chances of a P2P connection succeding on home network are usually low,
+as most routers today reject incoming inconnections. UDP hole punching by it self is also not guaranteed
+to make connectivity work but it greatly increases the chances.
+
+Normally hole punching is done through a central pre-shared server. For example this is how WebRTC
+in a WebBrowser does hole punching, in many cases using Google's free central hole puncher.
+
+In the HyperSwarm DHT we use DHT peers instead of relying on a central hole puncher.
+
+Although more complex than using a central server, this has a couple of advantages.
+
+* It is less reliant on centralised peers.
+* Less metadata is leaked to a third party (i.e. who is connecting to who).
+* Having hole punching built in to a DHT means more peers can join the DHT, making it larger and thereby stronger.
+
+If peer A wants to connect to peer B, then the DHT peer, C, storing the information about B's IP and port
+will be able to act as a hole punching peer. This follows because B was able to access C to store its IP and port
+and A want able to access C because it was able to retrieve the IP and port from C as well.
