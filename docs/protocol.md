@@ -1,6 +1,6 @@
 # The Dazaar Protocol
 
-This document tries to lay out how Dazaar works on an overall
+This document tries to lay out how Dazaar, https://dazaar.com works on an overall
 technical level. Dazaar is a protocol and marketplace for sharing,
 selling, and buying various time series data sets over a peer to peer
 network. When we talk about time series data, we mean any kind of data
@@ -347,6 +347,35 @@ If peer A wants to connect to peer B, then the DHT peer, C, storing the informat
 will be able to act as a hole punching peer. This follows because B was able to access C to store its IP and port
 and A want able to access C because it was able to retrieve the IP and port from C as well.
 
+## Dazaar Card
+
+To easier distribute the payment terms and other metadata for the data set you want to share on Dazaar
+in a structured way, we introduce the "Dazaar Card", a JSON object describing your data set and terms.
+
+A Dazaard card looks like this:
+
+```json
+{
+  "name": "Dazaar card example",
+  "description": "Highly valuable market data",
+  "homepage": "https://example.com",
+  "contact": "janedoe@example.com",
+  "provider": "Jane Doe",
+  "sellerKey": "dead...beef",
+  "payment": [{
+    "method": "ETH",
+    "currency": "ETH",
+    "unit": "seconds",
+    "interval": "600",
+    "amount": "0.01",
+    "payTo": "0x61b9898c9b60a159fc91ae8026563cd226b7a0c1"
+  }]
+}
+```
+
+The above Dazaar card describes a data set of "Highly valuable market data", that can be purchased using
+an Ethereum payment of `0.01` every 600 seconds to the specified address.
+
 ## Buying and selling protocol using Dazaar
 
 We use the above data structures and techniques to construct the Dazaar market place for data.
@@ -362,7 +391,7 @@ strong passphrase).
 S then announces their IP and port on the HyperSwarm DHT under their public key and publishes
 their public key on a web site or some distributed table together with a human readable description
 off the data set they are selling, along with details of price, how to pay, terms etc, in the form
-of a Dazaar card (described below).
+of a Dazaar card (described above).
 
 ### Buying data
 
@@ -397,3 +426,12 @@ the re-keyed Hypercore using the Hypercore replication protocol.
 
 Periodically S will verify that B's public is still in a recent transaction to S based on the terms.
 If not S should terminate the connection to B.
+
+## Conclusion
+
+Dazaar is new protocol for sharing, selling and buying data using a fully distributed network without
+middlemen and payment fees involved.
+
+This paper describes the initial functional prototype of the system.
+
+We are eager to get feedback on the system as we iterate the various aspects of it.
