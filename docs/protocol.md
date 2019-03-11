@@ -1,35 +1,35 @@
 # The Dazaar Protocol
 
-This document tries to lay out how Dazaar, https://dazaar.com works on an
-overall technical level. Dazaar is a protocol and marketplace for sharing,
-selling, and buying various time series data sets over a peer to peer network.
-When we talk about time series data, we mean any kind of data that can be
+This document describes how Dazaar (https://dazaar.com) works in detail. Dazaar
+is a protocol and marketplace for sharing, selling, and buying various data sets
+through a peer to peer network. Dazaar supports any data format that can be
 represented using an append-only log data structure.
 
-## Hypercores
+## Hypercore
 
-In Dazaar we use the P2P append-only log data structure called Hypercore,
-https://github.com/mafintosh/hypercore as the main format for storing and
-distributing data.
+Dazaar's core primitive is the P2P append-only log data structure named
+Hypercore, https://github.com/mafintosh/hypercore, which serves as the main
+format for storing and distributing data.
 
-Hypercores are similar to a single writer blockchain, that does not need any
-proof of work / stake, since only the creator of the chain is be able to write
-to it. Every entry appended to a Hypercore is addressed by the index at which it
-is inserted, similar to a simple array. To ensure content integrity when the
-Hypercores are replicated they have an integrated Merkle Tree that is used to
-make sure only the data added by the original creator is distributed. When a new
-item is inserted into the Hypercore, the Merkle Tree is updated and then signed
-by a cryptographic keypair that only the creator has access to.
+Hypercore is similar to a single-writer ledger, which does not need any
+proof of work / stake, since only the creator of the ledger is able to append to
+it. Each entry appended to a Hypercore is addressed by a sequence number, at
+which it is inserted, similar to an array. To guarantee data integrity,
+Hypercore uses a cryptographically signed Merkle Tree. Only the content creator
+holds the secret key for signing new data. Using a Merkle Tree also gives
+efficient updates and random access. When a new item is appended to the
+Hypercore, the Merkle Tree is updated and the root(s) are signed.
 
-``` # A Hypercore with 3 items appended looks like this where the first item #
-is addressed by index 0, then 1, then 2, and so fourth.
+```
+# A Hypercore with 3 items appended looks like this where the first item
+# is addressed by sequence number 0, then 1, then 2, and so fourth.
 
 0: hello
 1: distributed
 2: world
 ```
 
-The integrated Merkle Tree "spans" the data in the following way
+The Merkle Tree "spans" the data in the following way
 
 ```
   1 <-------+
@@ -44,54 +44,50 @@ o   .  d
     .
 ```
 
-If we were to append the value "another" to the Hypercore the Merkle Tree
-expands into the following structure
+Appending the value "another" to the Hypercore, the Merkle Tree
+grows into the following structure
 
 ```
       3 <------- Merkle Tree root
-   /    \
-  1      5
- / \    / \
-0   2  4   6
+   /     \
+  1       5
+ / \     / \
+0   2   4   6
 
-h   d  w   a
-e   i  o   n
-l   s  r   o
-l   t  l   t
-o   .  d   .
-    .      .
+h   d   w   a
+e   i   o   n
+l   s   r   o
+l   t   l   t
+o   .   d   .
+    .       .
 ```
 
-In the case of multiple merkle roots (i.e. whenever `count(data) !== 2 ^ n`), we
-can simply hash all of those together to build a single root.
+In the case of multiple Merkle roots (ie. `count(data) !== 2 ^ n`), all roots
+are hashed together, called a tree hash, which is then signed to construct a
+single Merkle proof. These loose roots are sometimes called "peaks" or
+"shoulders".
 
-The public key of the cryptographic keypair is used to sign the Hypercore Merkle
-Tree root, so that a replicating peer can use key pair to verify that the tree
-can be trusted when new data is appended.
+Signing the root of the Merkle Tree verifies the origin of the data, since a
+replicating peer will use the corresponding public key to verify the origin of
+the data, as well as the integrity. The public key acts as a distributed
+identifier for the Hypercore, often referred to as the "Hypercore key".
 
-It acts as the distributed identifier for the Hypercore, often referred to as
-"The Hypercore key".
+As previously mentioned, the Merkle Tree allows for efficient random access.
+This feature allows peers to securely download only the parts of the log, they
+are interested in. This property makes Hypercore ideal for time series data with
+live updates or sparsely replicating very large data sets.
 
-In addition it has advanced "random access" features that allows peers to
-securely download only the parts of the log, they are interested in.
+The random access features also permits powerful data structures to be
+implemented on top, which opens for much more rich applications.
 
-Due to it's append-only structure and distributed nature Hypercore are a great
-choice for any kind of pure time series data you would want to distribute
-online.
+Examples include:
 
-However the random access features, also allow powerful data structures to be
-implemented on top that allows much more complex applications.
+* Random access key-value store: https://github.com/mafintosh/hypertrie
+* Multi-writer key-value store: https://github.com/mafintosh/hyperdb
+* Distributed file system: https://github.com/mafintosh/hyperdrive
 
-Examples of these include:
-
-* Random access key value store, https://github.com/mafintosh/hypertrie
-* Multi writer key value stores, https://github.com/mafintosh/hyperdb
-* Distributed file systems, https://github.com/mafintosh/hyperdrive
-
-And many more.
-
-Hypercores are used as the foundating of the Dat project data structures, and
-more technical information exists in the original Dat white paper,
+Hypercores are also used as the foundation of the Dat protocol, and further
+technical details can be found in the Dat white paper:
 https://github.com/datprotocol/whitepaper/blob/master/dat-paper.pdf
 
 ## Distribution and access control
