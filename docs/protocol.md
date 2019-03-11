@@ -128,27 +128,32 @@ Obviously for something like a distributed market place where we want to able to
 sell a subscription to a data feed, and revoke access to the same data feed if a
 customer is no longer paying for it we needed a better solution.
 
-## Revokable data subscriptions
+## Revokable Data Subscriptions
 
-To support revokable data subscriptions on top of Hypercore we need a couple of
-features that the above capability system does not provide out of the box.
+To support revokable data subscriptions on top of Hypercore we need to support
+the two phases of a subscription; purchase and access.
 
-1. A fully authenticated encrypted channel so a seller knows who a buyer is and
-vice versa, so that trust can be established that a buyer actually bought the
-data and is not pretending to be someone else. 2. A way to revoke access to a
-Hypercore so that once a buyer stops paying for a subscription we have a way to
-stop sharing data with them in the future.
+1. During the purchase phase, the buyer connects to the seller using a mutually
+authenticating handshake over an encrypted channel, first providing the public
+key they want to bind the subscription to and then a proof of purchase. This
+proof of purchase must be publicly verifiable for the seller, who upon
+successful validation, will proceed to share data. This verification could for
+example be querying a blockchain. A seller may choose to make purchases a
+one-time fee or an ongoing fee based on, for example, time.
+2. During the access phase, the buyer connects to the seller using the key pair
+for which they provided the public key during the registration, which the seller
+then verifies for having an active subscription. An inactive subscription
+(eg. insufficient payment) will cause a rejection and the access is effectively
+revoked. Again verification could happen against a blockchain or a local
+database kept from the purchase phase.
 
-Given these features we can establish a market place where a buyer identifies a
-data stream they want to purchase from a seller.
-
-Using an encrypted channel they would establish a P2P connection between each
-other and establish that the buyer has indeed purchased a subscription for the
-data using some proof of payment. Since they are using an authenticated
-connection the buyer should be able to trust that the seller is indeed the owner
-of the dataset and a scammer trying to push bad data. Periodically the seller
-will check that the buyer's subscription is still valid and if that is no longer
-the case the buyer will revoke access to the data stream.
+Since connections are mutually authenticated, the buyer will know that it is
+talking to the correct seller, since the seller must hold the correct secret
+key, and the seller know they are talking to the correct buyer, since they must
+hold the secret key to the public key provided during purchase. During access
+the seller can choose to close the connection in case of insufficient payment,
+to cut off access for the buyer. In addition the guarantees Hypercore provides
+reassures the buyer that they are talking to the right seller.
 
 ## 1. Fully authenticated connections
 
