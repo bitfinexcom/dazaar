@@ -84,10 +84,9 @@ implemented on top that allows much more complex applications.
 
 Examples of these include:
 
-* Random access key value stores using hash array mapped tries,
-* https://github.com/mafintosh/hypertrie Multi writer key value stores,
-* https://github.com/mafintosh/hyperdb Distributed file systems,
-* https://github.com/mafintosh/hyperdrive
+* Random access key value store, https://github.com/mafintosh/hypertrie
+* Multi writer key value stores, https://github.com/mafintosh/hyperdb
+* Distributed file systems, https://github.com/mafintosh/hyperdrive
 
 And many more.
 
@@ -366,9 +365,9 @@ puncher.
 Although more complex than using a central server, this has a couple of
 advantages.
 
-* It is less reliant on centralised peers. Less metadata is leaked to a third
-* party (i.e. who is connecting to who). Having hole punching built in to a DHT
-* means more peers can join the DHT, making it larger and thereby stronger.
+* It is less reliant on centralised peers.
+* Less metadata is leaked to a third party (i.e. who is connecting to who).
+* Having hole punching built in to a DHT means more peers can join the DHT.
 
 If peer A wants to connect to peer B, then the DHT peer, C, storing the
 information about B's IP and port will be able to act as a hole punching peer.
