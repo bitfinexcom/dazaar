@@ -325,9 +325,8 @@ to, to find other peers in our topic.
 One of the main features of the HyperSwarm DHT is that it solves another hard problem in regards to P2P discovery
 and connectivity, something called UDP hole punching.
 
-UDP hole punching is a mechanism where two peers behind a firewall can use a third peer that they both
-can connect to through their firewall, to exchange a series of messages that allow them to connect directly
-to eachother.
+UDP hole punching is a mechanism where two peers behind a firewall can use a third peer that they both can connect to
+through their firewall, to exchange a series of messages that allow them to connect directly to eachother.
 
 Without UDP hole punching the chances of a P2P connection succeding on home network are usually low,
 as most routers today reject incoming inconnections. UDP hole punching by it self is also not guaranteed
@@ -347,3 +346,54 @@ Although more complex than using a central server, this has a couple of advantag
 If peer A wants to connect to peer B, then the DHT peer, C, storing the information about B's IP and port
 will be able to act as a hole punching peer. This follows because B was able to access C to store its IP and port
 and A want able to access C because it was able to retrieve the IP and port from C as well.
+
+## Buying and selling protocol using Dazaar
+
+We use the above data structures and techniques to construct the Dazaar market place for data.
+
+### Selling data
+
+It functions like this. Assume a seller, S wants to sell a data set stored in a Hypercore, HC.
+
+If S has not already they generate a cryptographic key pair to be used as their identity.
+This key pair is persisted using any form of secure storage (i.e. stored encrypted backed back a
+strong passphrase).
+
+S then announces their IP and port on the HyperSwarm DHT under their public key and publishes
+their public key on a web site or some distributed table together with a human readable description
+off the data set they are selling, along with details of price, how to pay, terms etc, in the form
+of a Dazaar card (described below).
+
+### Buying data
+
+Now a buyer B, discovers the data set listing for HC and wants to purchase it.
+
+Like S, B generates and persists a key pair.
+
+Then, based on the terms that S listed, B does an initial payment for the data and when doing
+so attaches their public key to the payment.
+
+B then connects to S. Like mentioned in the authenticated connections section above, S validates
+B's public key by checking that B's public key is present in a recent payment to S.
+
+If so, S generates a re-keyed Hypercore, HC', from HC and forwards the Hypercore key of HC' to B.
+If B has previously contacted S, then it should not make a new re-keyed Hypercore but instead re-use
+the keypair from the previous interaction, so that B does not have to redownload the full data set again.
+
+It sends back the key of HC' using by sending the following Protocol Buffers schema
+
+```proto
+message Receipt {
+  optional bytes reKeyedFeed = 1;
+  optional string invalid = 2;
+}
+```
+
+In case it rejects B's public key, it can set the `invalid` string in the Receipt message to contain
+the reason why it rejected it.
+
+After sending the Receipt message, the rest of the encrypted channel between S and B, is used to replicate
+the re-keyed Hypercore using the Hypercore replication protocol.
+
+Periodically S will verify that B's public is still in a recent transaction to S based on the terms.
+If not S should terminate the connection to B.
