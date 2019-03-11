@@ -13,7 +13,7 @@ https://github.com/mafintosh/hypercore as the main format for storing and
 distributing data.
 
 Hypercores are similar to a single writer blockchain, that does not need
-any proof of work / stake, since only the creator of the chain is be able 
+any proof of work / stake, since only the creator of the chain is be able
 to write to it. Every entry appended to a Hypercore is addressed by the index
 at which it is inserted, similar to a simple array. To ensure content
 integrity when the Hypercores are replicated they have an integrated Merkle
@@ -31,8 +31,47 @@ has access to.
 2: world
 ```
 
-The public key of the cryptographic keypair used to sign the Hypercore Merkle
-Tree also acts as the distributed identifier for the Hypercore, often referred
+The integrated Merkle Tree "spans" the data in the following way
+
+```
+  1 <-------+
+ / \        |--- Merkle Tree roots
+0   2  4 <--+
+
+h   d  w
+e   i  o
+l   s  r
+l   t  l
+o   .  d
+    .
+```
+
+If we were to append the value "another" to the Hypercore the Merkle Tree expands into
+the following structure
+
+```
+      3 <------- Merkle Tree root
+   /    \
+  1      5
+ / \    / \
+0   2  4   6
+
+h   d  w   a
+e   i  o   n
+l   s  r   o
+l   t  l   t
+o   .  d   .
+    .      .
+```
+
+In the case of multiple merkle roots (i.e. whenever `count(data) !== 2 ^ n`), we can
+simply hash all of those together to build a single root.
+
+The public key of the cryptographic keypair is used to sign the Hypercore Merkle
+Tree root, so that a replicating peer can use key pair to verify that the tree can be
+trusted when new data is appended.
+
+It acts as the distributed identifier for the Hypercore, often referred
 to as "The Hypercore key".
 
 In addition it has advanced "random access" features that allows peers to
@@ -52,6 +91,10 @@ Examples of these include:
 * Distributed file systems, https://github.com/mafintosh/hyperdrive
 
 And many more.
+
+Hypercores are used as the foundating of the Dat project data structures, and more
+technical information exists in the original Dat white paper,
+https://github.com/datprotocol/whitepaper/blob/master/dat-paper.pdf
 
 ## Distribution and access control
 
@@ -139,16 +182,16 @@ with potential data buyers through some secure medium, such as posting in on a p
 or sending it through a secure messaging app such as Signal. The corresponding secret key
 is known only to the data seller and kept secure and private.
 2. A data buyer is also identified by a cryptographic public (B) but this key is not
-pre-shared with the data buyer.
+pre-shared with the data seller.
 
 To purchase a data subscription the buyer provides payment using a payment method the seller
 has pre-shared. For example if they were to pay using a crypto currency they'd include their
 public key (S) in the transaction comment that is submitted to the corresponding block chain.
 
-The seller then connects to the buyer. To find each other they used the same DHT used by Hypercore
+The buyer then connects to the seller. To find each other they used the same DHT used by Hypercore
 to find and announce peers.
-The buyer announces their IP address under their public key (B) which the seller uses to find
-the buyer and the two peers establish a network connection between each other.
+The seller announces their IP address under their public key (B) which the buyer uses to find
+the seller and the two peers establish a network connection between each other.
 
 To establish the fully authenticated and encrypted connection the peers now use the Noise
 protocol framework using the XK pattern. The XK pattern is used when we have a preshared public
@@ -167,4 +210,82 @@ Periodically the seller should revalidate that the buyers public key is present 
 transaction and if that is no longer the case revoke the data stream and disconnect from the
 buyer.
 
+We should note that to revoke a key pair used by a buyer to connect to a seller, one should simply
+stop providing a payment proof for this key pair. It should also be noted that it is the sellers
+responsibility to ensure that it is not connected to multiple buyers using the same key pair.
+
 ## 2. Revokable Hypercores
+
+Using the scheme described above we can bootstrap a network, where the authentication layer for
+each encrypted connection is based on a "proof of payment" instead of a federated certification chain
+like in SSL.
+
+In the situation where we want to revoke access to the data stored in the Hypercore, for example in
+case the proof of payment has expired, or if the buyer has broken usage terms that the seller has
+provided, we need to some additional tweaks.
+
+If we recall from earlier in this document, Hypercores by themself do not have a per user revocation
+scheme build in. If you share a Hypercore with peers A and B, there is nothing stopping peer A from
+continue to share it with B, if you cut off access to peer B.
+
+For a market place we obviously want better mechanics for this. To provide this we introduce a concept
+of "re-keyed" Hypercores. A re-keyed Hypercore is a Hypercore that share the data and Merkle Tree
+with another Hypercore, but its Merkle root is signed by a different key pair which makes it look like
+a different data set on the network.
+
+If we look at the technical drawing for a Hypercore with 4 pieces of data in the beginning of this
+paper
+
+```
+      3   <--- Merkle Tree root
+   /    \
+  1      5
+ / \    / \
+0   2  4   6
+```
+
+To re-key a Hypercore like this, we simply generate a new key pair and re-sign the Merkle Tree root
+at `3`. In the worst case there will only ever be `log2(count(data))` Merkle Tree roots, making this
+operation efficent. We don't need to store any of these signatures on disk as they can simply be generated
+on demand when a peer requests a new signature for an updated Merkle tree. This means that a re-keyed
+Hypercore requires zero additional storage except that we need to persist the key pair used to generate
+the signature.
+
+Directly two re-keyed Hypercores cannot swarm with each other.
+
+```
+# Non re-keyed replication:
+# A is a hypercore and B and C are peers replicating
+
+   A
+ /   \
+B --- C
+
+# If A stops replicating with C, B can still forward the data and C can still verify it.
+
+   A
+ /
+B --- C
+
+# Re-keyed replication:
+# A is a hypercore and B is a re-keyed Hypercore based on A
+# and C is a re-keyed Hypercore based on A
+
+   A
+ /   \
+B     C
+
+# In this case B and C cannot swarm directly as the two Hypercores
+# are not equal (ie uses different key pairs)
+```
+
+It should be noted that if B and C in the scenario choses to replicate anyway, their Merkle Trees will
+be equivalent, but their tree signatures will not. This means that C could in theory get old data from
+B as long as it receives the signatures from A for the corresponding Merkle Tree root.
+
+To revoke access to a re-keyed Hypercore a seller should simply stop sharing the re-keyed Hypercore.
+In addition to avoid the revoked buyer re-sharing the re-keyed Hypercore, it can choose to make public
+the key pair used to sign the Merkle Tree. By publisizing it, the key pair can no longer be trusted to
+only have been used by the seller, making it non trust worthy. In this case the buyer can still re-share
+the data, but would have to sign it with a key pair the buyer generates by themself, invalidating that
+the data actually came from the seller.
