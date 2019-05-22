@@ -75,7 +75,8 @@ Options include:
    // Predicate whether a remote key can get replicate this feed,
    // remoteKey being a Buffer to check and cb being a callback which can be
    // passed an error as the first argument, causing replication to fail, ie.
-   // the buyer has not paid
+   // the buyer has not paid. The err.message will be passed back to the buyer
+   // and can be used to specify a reason for the rejection
   validate (remoteKey, cb) {},
   // How often to call the above validate function in milliseconds.
   // Default is 1000ms
