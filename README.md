@@ -57,8 +57,9 @@ seller.on('ready', function () {
 
 #### `const market = dazaar(storage)`
 
-Create a new dazaar instance. Pass as [`random-access-storage`][ras] compatible
- `storage`. Examples include (but not limited to):
+Create a new dazaar instance. Pass a `string` if you want to use the default
+file storage or a [`random-access-storage`][ras] compatible `storage`.
+Examples include (but not limited to):
  - [`random-access-file` (`raf`)][raf]
  - [`random-access-memory` (`ram`)][ram]
  - [`random-access-web` (`raw`)][raw]
