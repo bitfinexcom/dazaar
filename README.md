@@ -137,11 +137,11 @@ Emitted when a remote seller invalidates us with the error they provided.
 
 The feed we bought.
 
-#### `bool = market.isSeller(instance)`
+#### `const bool = market.isSeller(instance)`
 
 Helper to determine if an instance is a seller.
 
-#### `bool = market.isBuyer(instance)`
+#### `const bool = market.isBuyer(instance)`
 
 Helper to determine if an instance is a buyer.
 
