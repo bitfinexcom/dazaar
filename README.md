@@ -66,7 +66,7 @@ Examples include (but not limited to):
 
 #### `const seller = market.sell(feed, options)`
 
-Sell a hypercore by creating a new seller.
+Sell a [`hypercore`][hypercore] by creating a new `seller`.
 
 Options include:
 
@@ -161,7 +161,7 @@ swarm(seller) // swarms the seller
 
 MIT
 
-
+[hypercore]: https://github.com/mafintosh/hypercore
 [ras]: https://github.com/random-access-storage/random-access-storage
 [raf]: https://github.com/random-access-storage/random-access-file
 [ram]: https://github.com/random-access-storage/random-access-memory
