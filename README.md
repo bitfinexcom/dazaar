@@ -73,8 +73,12 @@ Options include:
 ```js
 {
    // Predicate whether a remote key can get replicate this feed,
+   // remoteKey being a Buffer to check and cb being a callback which can be
+   // passed an error as the first argument, causing replication to fail, ie.
+   // the buyer has not paid
   validate (remoteKey, cb) {},
-  // How often to call the above validate function
+  // How often to call the above validate function in milliseconds.
+  // Default is 1000ms
   validateInterval: 1000
 }
 ```
