@@ -256,20 +256,13 @@ class Seller extends EventEmitter {
           const copy = Buffer.alloc(remoteKey.length)
           remoteKey.copy(copy)
 
-          self.emit('validate', copy)
-          self.validate(copy, function (err) {
-            if (err) {
-              done(null)
-              stream.end(messages.Receipt.encode({ invalid: err.message }))
-              return
-            }
-
-            timeout = setTimeout(check, self.revalidate)
+          check(function () {
             sell(copy)
             done(null)
           })
 
-          function check () {
+          function check (after) {
+            after = after || noop
             self.emit('validate', copy)
             self.validate(copy, function (err) {
               if (stream.destroyed) return
@@ -280,6 +273,7 @@ class Seller extends EventEmitter {
                 return
               }
               timeout = setTimeout(check, self.revalidate)
+              after()
             })
           }
         }
