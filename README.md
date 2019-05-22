@@ -72,8 +72,10 @@ Options include:
 
 ```js
 {
-  validate (remoteKey, cb) // wheather a remote key can get a copy of this feed,
-  validateInterval: 1000 // how often to validate
+   // Predicate whether a remote key can get replicate this feed,
+  validate (remoteKey, cb) {},
+  // How often to call the above validate function
+  validateInterval: 1000
 }
 ```
 
