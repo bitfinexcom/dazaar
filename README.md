@@ -92,6 +92,12 @@ Get a list of all the buyers of this feed
 
 Emitted when the seller is fully ready and has loaded it's keypair
 
+#### `seller.on('validate', remoteKey)`
+
+Event when the seller receives a `remoteKey`, but before the the `validate`
+function is called. `remoteKey` a Buffer, and the same reference passed to
+`validate`.
+
 #### `seller.discoveryKey`
 
 A hash of the sellers public key that can be used for discovery purposes, eg.
