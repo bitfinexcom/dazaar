@@ -1,6 +1,6 @@
 # dazaar
 
-Share hypercores on a one to one basis like a marketplace
+> Marketplace for selling and buying `hypercores`
 
 ```
 npm install dazaar
