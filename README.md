@@ -13,7 +13,7 @@ First setup a seller
 ```js
 const hypercore = require('hypercore')
 const pump = require('pump')
-const market = require('./market')
+const market = require('dazaar/market')
 
 const m = market('./tmp')
 
@@ -45,7 +45,7 @@ seller.on('ready', function () {
   })
 
   const stream = seller.replicate()
-  
+
   pump(stream, buyer.replicate(), stream, function (err) {
     console.log('replication ended', err)
   })
@@ -56,7 +56,11 @@ seller.on('ready', function () {
 
 #### `const market = dazaar(storage)`
 
-Create a new dazaar instance
+Create a new dazaar instance. Pass as [`random-access-storage`][ras] compatible
+ `storage`. Examples include (but not limited to):
+ - [`random-access-file` (`raf`)][raf]
+ - [`random-access-memory` (`ram`)][ram]
+ - [`random-access-web` (`raw`)][raw]
 
 #### `const seller = market.sell(feed, options)`
 
@@ -81,11 +85,13 @@ Emitted when the seller is fully ready and has loaded it's keypair
 
 #### `seller.discoveryKey`
 
-A hash of the sellers public key that can be used for discovery purposes.
+A hash of the sellers public key that can be used for discovery purposes, eg.
+peer discovery on a DHT. See the [Swarm](#swarm) section below.
 
 #### `seller.key`
 
-The public key of this seller. Needed to buy the data.
+The public key of this seller. Must be communicated to potential buyers, as
+this is needed in the handshake to buy the data.
 
 #### `const buyer = market.buy(sellerKey)`
 
@@ -108,13 +114,14 @@ The seller public key.
 
 #### `buyer.discoveryKey`
 
-A hash of the seller public key that can be used to discover the seller on a network.
+A hash of the seller public key that can be used to discover the seller on a
+network. See the [Swarm](#swarm) section below.
 
 #### `buyer.on('feed', feed)`
 
 Emitted when we have a feed.
-If we previously succesfully validated this is triggered right away.
-Otherwise it is triggerd after the first remote validation.
+If we previously successfully validated, this is triggered right away.
+Otherwise it is triggered after the first remote validation.
 
 #### `buyer.on('validate')`
 
@@ -138,7 +145,8 @@ Helper to determine if an instance is a buyer.
 
 ## Swarm
 
-A network swarm based on hyperswarm is included as `dazaar/swarm`
+A network swarm based on [`hyperswarm`][hyperswarm] is included as
+`dazaar/swarm`
 
 ```js
 const swarm = require('dazaar/swarm')
@@ -150,3 +158,10 @@ swarm(seller) // swarms the seller
 ## License
 
 MIT
+
+
+[ras]: https://github.com/random-access-storage/random-access-storage
+[raf]: https://github.com/random-access-storage/random-access-file
+[ram]: https://github.com/random-access-storage/random-access-memory
+[raw]: https://github.com/random-access-storage/random-access-web
+[hyperswarm]: https://github.com/hyperswarm/network
