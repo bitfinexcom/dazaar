@@ -36,6 +36,7 @@ seller.on('ready', function () {
   buyer.on('feed', function () {
     console.log('got the feed!')
     buyer.feed.get(0, function (err, data) {
+      if (err) throw err // Do proper error handling
       console.log('first feed entry: ' + data)
     })
   })
