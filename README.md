@@ -159,6 +159,11 @@ swarm(buyer) // swarms the buyer
 swarm(seller) // swarms the seller
 ```
 
+#### `const sw = swarm(buyerOrSeller, [onerror], [opts])`
+
+Create a new [`hyperswarm`][hyperswarm] for a `buyer` or `seller`, optionally
+passing a `onerror` handling function and `opts` to pass to `hyperswarm`.
+
 ## License
 
 MIT
