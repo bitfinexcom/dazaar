@@ -16,7 +16,9 @@ const seller = m.sell(feed, {
 
 swarm(seller)
 
-seller.on('ready', function () {
+seller.ready(function (err) {
+  if (err) throw err
+
   console.log('seller key pair fully loaded ...')
 
   const buyer = m.buy(seller.key)

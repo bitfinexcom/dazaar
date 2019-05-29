@@ -1,5 +1,7 @@
 # dazaar
 
+![Dazaar logo](docs/logo.png)
+
 > Marketplace for selling and buying `hypercores`
 
 ```
@@ -28,7 +30,8 @@ const seller = m.sell(feed, {
   }
 })
 
-seller.on('ready', function () {
+seller.ready(function (err) {
+  if (err) throw err // Do proper error handling
   console.log('seller key pair fully loaded ...')
 
   const buyer = m.buy(seller.key)
@@ -84,6 +87,9 @@ Options include:
 }
 ```
 
+You can use [`random-access-corestore` (`rac`)][rac] to manage multiple
+named feeds.
+
 #### `seller.buyers(cb)`
 
 Get a list of all the buyers of this feed
@@ -91,6 +97,12 @@ Get a list of all the buyers of this feed
 #### `seller.on('ready')`
 
 Emitted when the seller is fully ready and has loaded it's keypair
+
+#### `seller.ready(cb)`
+
+Call `cb` when the `seller` object is fully initialised, optionally with an
+`error`. Similar to the event, but will call immediately if the event has
+already fired.
 
 #### `seller.on('validate', remoteKey)`
 
@@ -120,8 +132,10 @@ Emitted when the buyer is fully ready and has fully loaded it's keypair.
 
 #### `buyer.key`
 
-The buyer public key. All buyers have the same public key through out the market
-instance. This is the remote key the seller sees in the validate function
+The buyer static public key. A `dazaar` instance uses the same public key for all
+`.buy` calls. This is the remote key the seller sees in the validate function.
+If you want to use multiple different identities you must have multiple `dazaar`
+instances backed by different storage.
 
 #### `buyer.seller`
 
@@ -184,4 +198,5 @@ MIT
 [raf]: https://github.com/random-access-storage/random-access-file
 [ram]: https://github.com/random-access-storage/random-access-memory
 [raw]: https://github.com/random-access-storage/random-access-web
+[rac]: https://github.com/andrewosh/random-access-corestore
 [hyperswarm]: https://github.com/hyperswarm/network
