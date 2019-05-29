@@ -91,7 +91,7 @@ class Buyer extends EventEmitter {
   }
 
   get key () {
-    return this._market.key
+    return this._market.buyer
   }
 
   get discoveryKey () {
