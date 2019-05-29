@@ -127,8 +127,10 @@ Emitted when the buyer is fully ready and has fully loaded it's keypair.
 
 #### `buyer.key`
 
-The buyer public key. All buyers have the same public key through out the market
-instance. This is the remote key the seller sees in the validate function
+The buyer static public key. A `dazaar` instance uses the same public key for all
+`.buy` calls. This is the remote key the seller sees in the validate function.
+If you want to use multiple different identities you must have multiple `dazaar`
+instances backed by different storage.
 
 #### `buyer.seller`
 
@@ -191,4 +193,5 @@ MIT
 [raf]: https://github.com/random-access-storage/random-access-file
 [ram]: https://github.com/random-access-storage/random-access-memory
 [raw]: https://github.com/random-access-storage/random-access-web
+[rac]: https://github.com/andrewosh/random-access-corestore
 [hyperswarm]: https://github.com/hyperswarm/network
