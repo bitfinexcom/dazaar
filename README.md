@@ -1,5 +1,7 @@
 # dazaar
 
+![Dazaar logo](docs/logo.png)
+
 > Marketplace for selling and buying `hypercores`
 
 ```
