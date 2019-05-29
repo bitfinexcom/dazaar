@@ -87,6 +87,9 @@ Options include:
 }
 ```
 
+You can use [`random-access-corestore` (`rac`)][rac] to manage multiple
+named feeds.
+
 #### `seller.buyers(cb)`
 
 Get a list of all the buyers of this feed
