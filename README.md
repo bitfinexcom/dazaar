@@ -28,7 +28,8 @@ const seller = m.sell(feed, {
   }
 })
 
-seller.on('ready', function () {
+seller.ready(function (err) {
+  if (err) throw err // Do proper error handling
   console.log('seller key pair fully loaded ...')
 
   const buyer = m.buy(seller.key)
@@ -91,6 +92,12 @@ Get a list of all the buyers of this feed
 #### `seller.on('ready')`
 
 Emitted when the seller is fully ready and has loaded it's keypair
+
+#### `seller.ready(cb)`
+
+Call `cb` when the `seller` object is fully initialised, optionally with an
+`error`. Similar to the event, but will call immediately if the event has
+already fired.
 
 #### `seller.on('validate', remoteKey)`
 

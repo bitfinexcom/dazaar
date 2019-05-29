@@ -15,7 +15,8 @@ const seller = m.sell(feed, {
   }
 })
 
-seller.on('ready', function () {
+seller.ready(function (err) {
+  if (err) throw err // Do proper error handling
   console.log('seller key pair fully loaded ...')
 
   const buyer = m.buy(seller.key)
