@@ -11,11 +11,15 @@
     "hypercore-multi-key": "^1.0.1",
     "hypercore-protocol": "^6.7.1",
     "hypertrie": "^3.1.0",
+    "minimist": "^1.2.0",
     "noise-peer": "^1.0.1",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
     "random-access-file": "^2.0.1",
     "thunky": "^1.0.3"
+  },
+  "bin": {
+    "dazaar-keygen": "./bin/keygen"
   },
   "devDependencies": {
     "protocol-buffers": "^4.1.0",
