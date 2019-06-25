@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env node
 const noise = require('noise-peer')
 const fs = require('fs')
 const path = require('path')
