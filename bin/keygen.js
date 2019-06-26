@@ -8,7 +8,7 @@ const DAZAAR_PATH = process.env.DAZAAR_PATH || path.join(os.homedir(), '.dazaar'
 
 const argv = require('minimist')(process.argv.slice(2), {
   string: ['p'],
-  boolean: ['f', 'h'],
+  boolean: ['f', 'h', 'version'],
   alias: {
     f: 'force',
     h: 'help',
@@ -24,9 +24,14 @@ if (argv.h) {
     -p, --path FILE     Where to store the dazaar secret key. The public key
                         will be stored at FILE.pub. Defaults to ~/.dazaar/noise
     -f, --force         Overwrite existing key files
+    --version           Show install Dazaar version
     -h, --help          Show this message
 `)
   process.exit(1)
+
+if (argv.version) {
+  console.info(require('../package.json').version)
+  process.exit(0)
 }
 
 fs.mkdirSync(DAZAAR_PATH, { recursive: true })
