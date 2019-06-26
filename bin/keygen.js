@@ -20,14 +20,15 @@ const argv = require('minimist')(process.argv.slice(2), {
 })
 
 if (argv.h) {
-  console.error(`dazaar-keygen
+  console.info(`dazaar-keygen
     -p, --path FILE     Where to store the dazaar secret key. The public key
                         will be stored at FILE.pub. Defaults to ~/.dazaar/noise
     -f, --force         Overwrite existing key files
     --version           Show install Dazaar version
     -h, --help          Show this message
 `)
-  process.exit(1)
+  process.exit(0)
+}
 
 if (argv.version) {
   console.info(require('../package.json').version)
