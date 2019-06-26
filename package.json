@@ -19,7 +19,7 @@
     "thunky": "^1.0.3"
   },
   "bin": {
-    "dazaar-keygen": "./bin/keygen"
+    "dazaar-keygen": "./bin/keygen.js"
   },
   "devDependencies": {
     "protocol-buffers": "^4.1.0",
