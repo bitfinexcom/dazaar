@@ -35,10 +35,10 @@ const keys = noise.keygen()
 
 try {
   fs.writeFileSync(argv.p, keys.secretKey, {
-    flag: argv.force ? 'wx' : 'wx+'
+    flag: argv.force ? 'w+' : 'wx+'
   })
   fs.writeFileSync(argv.p + '.pub', keys.publicKey, {
-    flag: argv.force ? 'wx' : 'wx+'
+    flag: argv.force ? 'w+' : 'wx+'
   })
 } catch (ex) {
   if (ex.code === 'EEXIST') {
