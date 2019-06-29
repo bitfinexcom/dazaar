@@ -16,10 +16,13 @@
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
     "random-access-file": "^2.0.1",
+    "sandbox-path": "^1.0.1",
     "thunky": "^1.0.3"
   },
   "bin": {
-    "dazaar-keygen": "./bin/keygen.js"
+    "dazaar-keygen": "./bin/keygen.js",
+    "dazaar-sell": "./bin/sell.js",
+    "dazaar-buy": "./bin/buy.js"
   },
   "devDependencies": {
     "protocol-buffers": "^4.1.0",
