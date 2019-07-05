@@ -5,17 +5,26 @@
   "main": "market.js",
   "dependencies": {
     "@hyperswarm/network": "0.0.4",
+    "dazaar-eos-stream": "1.0.0",
     "duplexify": "^3.6.0",
     "hypercore": "^6.19.2",
     "hypercore-crypto": "^1.0.0",
     "hypercore-multi-key": "^1.0.1",
     "hypercore-protocol": "^6.7.1",
     "hypertrie": "^3.1.0",
+    "minimist": "^1.2.0",
     "noise-peer": "^1.0.1",
     "protocol-buffers-encodings": "^1.1.0",
     "pump": "^3.0.0",
     "random-access-file": "^2.0.1",
+    "sandbox-path": "^1.0.1",
     "thunky": "^1.0.3"
+  },
+  "bin": {
+    "dazaar-keygen": "./bin/keygen.js",
+    "dazaar-sell": "./bin/sell.js",
+    "dazaar-fetch": "./bin/fetch.js",
+    "dazaar-buy": "./bin/buy.js"
   },
   "devDependencies": {
     "protocol-buffers": "^4.1.0",
