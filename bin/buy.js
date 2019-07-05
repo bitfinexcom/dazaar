@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const swarm = require('../swarm')
-const pump = require('pump')
+
+const eos = require('dazaar-eos-stream')
 const Path = require('sandbox-path')
 const path = require('path')
 const market = require('../market')
@@ -9,53 +9,90 @@ const raf = require('random-access-file')
 const DAZAAR_PATH = process.env.DAZAAR_PATH || path.join(process.cwd(), '.dazaar')
 
 const argv = require('minimist')(process.argv.slice(2), {
-  string: ['p'],
-  boolean: ['h', 'version', 'live'],
+  string: ['p', 'a', 'k'],
   alias: {
     h: 'help',
-    p: 'path',
-    l: 'live'
+    k: 'private-key',
+    a: 'account',
+    c: 'card',
+    p: 'path'
   },
   default: {
-    p: DAZAAR_PATH,
-    live: true
+    p: DAZAAR_PATH
   }
 })
 
 if (argv.h) {
   console.info(`
 
-Usage:	dazaar-buy [OPTIONS] KEY
+Usage: dazaar-buy [OPTIONS] [AMOUNT]
 
 Options:
   -p, --path PATH     Where to store the dazaar state, including keys.
                       Defaults to $PWD/.dazaar
   --version           Show install Dazaar version
   -h, --help          Show this message
+  -k, --private-key   Your EOS private key
+  -a, --account       Your EOS account
+  -c, --card          Path to the Dazaar card you want to purchase
 
 Arguments:
-  KEY                 Hex encoded public key provided by the seller
+  AMOUNT              How much do you want to pay? Fx '1.2000 EOS'
 `)
   process.exit(0)
 }
+
+const AMOUNT = argv._[0]
+const spath = new Path(argv.p)
+const prefixPath = prefix => f => raf(spath.resolve(prefix, f))
 
 if (argv.version) {
   console.info(require('../package.json').version)
   process.exit(0)
 }
-
-const spath = new Path(argv.p)
-const prefixPath = prefix => f => raf(spath.resolve(prefix, f))
+if (!argv.k) {
+  console.error('--private-key is required')
+  process.exit(1)
+}
+if (!argv.a) {
+  console.error('--account is required')
+  process.exit(1)
+}
+if (!AMOUNT) {
+  console.error('You must specify amount')
+  process.exit(1)
+}
 
 const m = market(prefixPath('.'))
-const buyer = m.buy(Buffer.from(argv._[0], 'hex'))
 
-buyer.ready(function (err) {
+const card = require(path.resolve(argv.card))
+
+const { pay } = eos({
+  account: argv.a,
+  privateKey: argv.k,
+  permission: argv.permission
+})
+
+m.ready(function (err) {
   if (err) throw err
 
-  buyer.once('feed', function () {
-    pump(buyer.feed.createReadStream({ live: argv.live }), process.stdout)
-  })
+  const payments = [].concat(card.payment || [])
 
-  swarm(buyer)
+  if (!payments.some(payEOS)) {
+    console.log('dazaar-buy only supports EOS at the moment')
+    process.exit(2)
+  }
+
+  function payEOS (p) {
+    if (p.method !== 'EOS') return false
+
+    pay(p.payTo, AMOUNT, 'dazaar: ' + card.id + ' ' + m.buyer.toString('hex'), function (err) {
+      if (err) throw err
+
+      console.log('Your payment of ' + AMOUNT + ' to ' + p.payTo + ' has been finalised')
+      console.log('Try fetching ' + card.id)
+    })
+
+    return true
+  }
 })

@@ -5,6 +5,7 @@
   "main": "market.js",
   "dependencies": {
     "@hyperswarm/network": "0.0.4",
+    "dazaar-eos-stream": "1.0.0",
     "duplexify": "^3.6.0",
     "hypercore": "^6.19.2",
     "hypercore-crypto": "^1.0.0",
@@ -22,6 +23,7 @@
   "bin": {
     "dazaar-keygen": "./bin/keygen.js",
     "dazaar-sell": "./bin/sell.js",
+    "dazaar-fetch": "./bin/fetch.js",
     "dazaar-buy": "./bin/buy.js"
   },
   "devDependencies": {
