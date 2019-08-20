@@ -62,17 +62,19 @@ class Market extends EventEmitter {
     return new Seller(this, this._db, feed, opts)
   }
 
-  buy (seller) {
-    return new Buyer(this, this._db, seller)
+  buy (seller, opts) {
+    return new Buyer(this, this._db, seller, opts)
   }
 }
 
 class Buyer extends EventEmitter {
-  constructor (market, db, seller) {
+  constructor (market, db, seller, opts) {
+    if (!opts) opts = {}
     super()
 
     this.seller = seller
     this.feed = null
+    this.sparse = !!opts.sparse
 
     this._db = db
     this._market = market
@@ -156,7 +158,9 @@ class Buyer extends EventEmitter {
   _setFeed (key) {
     const self = this
     if (this.feed) return this.feed
-    const uniqueFeed = hypercore(name => this._market._storage('buys/' + key.toString('hex') + '/' + name), key)
+    const uniqueFeed = hypercore(name => this._market._storage('buys/' + key.toString('hex') + '/' + name), key, {
+      sparse: this.sparse
+    })
     this.feed = uniqueFeed
     const k = 'buys/feeds/' + this.seller.toString('hex')
     this._db.get(k, function (err, node) {
