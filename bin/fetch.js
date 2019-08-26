@@ -27,7 +27,7 @@ const argv = require('minimist')(process.argv.slice(2), {
 if (argv.h) {
   console.info(`
 
-Usage: dazaar-fetch [OPTIONS] [KEY]
+Usage: dazaar-fetch [OPTIONS] <KEY>
 
 Options:
   -p, --path PATH     Where to store the dazaar state, including keys.
