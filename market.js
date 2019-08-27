@@ -10,6 +10,7 @@ const duplexify = require('duplexify')
 const raf = require('random-access-file')
 const thunky = require('thunky')
 const { EventEmitter } = require('events')
+const shift = require('stream-shift')
 const messages = require('./messages')
 
 exports = module.exports = storage => new Market(storage)
@@ -145,7 +146,7 @@ class Buyer extends EventEmitter {
 
       stream.on('error', noop)
       stream.once('readable', function () {
-        const first = messages.Receipt.decode(stream.read())
+        const first = messages.Receipt.decode(shift(stream))
         if (first.invalid) return self._destroy(new Error(first.invalid), socket)
         const feed = self._setFeed(first.uniqueFeed)
 
