@@ -96,6 +96,7 @@ class Buyer extends EventEmitter {
     this.seller = seller
     this.feed = null
     this.sparse = !!opts.sparse
+    this.info = null
 
     this._db = db
     this._market = market
@@ -150,20 +151,27 @@ class Buyer extends EventEmitter {
         if (first.invalid) return self._destroy(new Error(first.invalid), socket)
         const feed = self._setFeed(first.uniqueFeed)
 
+        self.info = tryParse(first.info)
         self.emit('validate', first.uniqueFeed)
+        if (self.info) self.emit('valid', self.info)
 
         const p = protocol({
-          extensions: [ 'dazaar/invalid' ]
+          extensions: [ 'dazaar/invalid', 'dazaar/valid' ]
         })
 
         pump(stream, feed.replicate({ live: true, encrypt: false, stream: p }), stream)
 
         feed.ready(function () {
-          if (!p.feeds.length) return
-          p.feeds[0].on('extension', function (name, data) {
+          feed.on('extension', function (name, data) {
             if (name === 'dazaar/invalid') {
               self._destroy(new Error(data.toString()), socket)
               p.destroy()
+            } else if (name === 'dazaar/valid') {
+              const info = tryParse(data)
+              if (info) {
+                self.info = info
+                self.emit('valid', info)
+              }
             }
           })
         })
@@ -201,6 +209,7 @@ class Seller extends EventEmitter {
     this.feed = feed
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
+    this.info = null
 
     this._db = db
     this._market = market
@@ -289,16 +298,22 @@ class Seller extends EventEmitter {
           function check (after) {
             after = after || noop
             self.emit('validate', copy)
-            self.validate(copy, function (err) {
+            self.validate(copy, function (err, info) {
               if (stream.destroyed) return
               if (err) {
-                if (!p.remoteSupports('dazaar/invalid') || !p.feeds.length) return stream.destroy(err)
-                p.feeds[0].extension('dazaar/invalid', Buffer.from(err.message))
+                self.emit('invalidate', copy, err)
+                if (!p || !p.remoteSupports('dazaar/invalid') || !p.feeds.length) return stream.destroy(err)
+                sendExt(p, 'dazaar/invalid', Buffer.from(err.message))
                 stream.end()
                 return
               }
+              if (typeof info === 'object' && info) {
+                self.info = info
+                self.emit('valid', copy, info)
+                if (p && p.remoteSupports('dazaar/valid')) sendExt(p, 'dazaar/valid', Buffer.from(JSON.stringify(info)))
+              }
               timeout = setTimeout(check, self.revalidate)
-              after()
+              after(null)
             })
           }
         }
@@ -330,16 +345,24 @@ class Seller extends EventEmitter {
           const uniqueFeed = multikey(self.feed, decodeKeys(node.value.uniqueFeed))
 
           p = protocol({
-            extensions: [ 'dazaar/invalid' ]
+            extensions: [ 'dazaar/invalid', 'dazaar/valid' ]
           })
 
-          stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key })) // send the key first
+          stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key, info: self.info && Buffer.from(JSON.stringify(self.info)) })) // send the key first
           pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream, function () {
             uniqueFeed.close()
           })
         })
       }
     })
+  }
+}
+
+function tryParse (data) {
+  try {
+    return data && JSON.parse(data)
+  } catch (_) {
+    return null
   }
 }
 
@@ -385,5 +408,11 @@ function requireMaybe (name) {
     return require(name)
   } catch (_) {
     return null
+  }
+}
+
+function sendExt (p, type, buf) {
+  for (const f of p.feeds) {
+    f.extension(type, buf)
   }
 }

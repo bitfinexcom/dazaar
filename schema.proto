@@ -1,4 +1,5 @@
 message Receipt {
   optional bytes uniqueFeed = 1;
   optional string invalid = 2;
+  optional bytes info = 3;
 }

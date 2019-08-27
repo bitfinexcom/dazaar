@@ -80,6 +80,8 @@ Options include:
    // passed an error as the first argument, causing replication to fail, ie.
    // the buyer has not paid. The err.message will be passed back to the buyer
    // and can be used to specify a reason for the rejection
+   // If you pass a info object to the callback when succesfully validating
+   // the buyer, this object will be forwarded to the buyer (see the 'valid' event).
   validate (remoteKey, cb) {},
   // How often to call the above validate function in milliseconds.
   // Default is 1000ms
@@ -109,6 +111,14 @@ already fired.
 Event when the seller receives a `remoteKey`, but before the the `validate`
 function is called. `remoteKey` a Buffer, and the same reference passed to
 `validate`.
+
+#### `seller.on('valid', remoteKey, info)`
+
+Emitted every time we succesfully validate a buyer.
+
+#### `seller.on('invalid', remoteKey, error)`
+
+Emitted when we invalidate a remote buyer.
 
 #### `seller.discoveryKey`
 
@@ -155,6 +165,10 @@ Otherwise it is triggered after the first remote validation.
 #### `buyer.on('validate')`
 
 Emitted first time a remote seller validates us.
+
+#### `buyer.on('valid', info)`
+
+Emitted everytime the remote seller sends us some updated info about our valid subscription.
 
 #### `buyer.on('invalidate', err)`
 
