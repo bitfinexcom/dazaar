@@ -10,6 +10,7 @@ const duplexify = require('duplexify')
 const raf = require('random-access-file')
 const thunky = require('thunky')
 const { EventEmitter } = require('events')
+const shift = require('stream-shift')
 const messages = require('./messages')
 
 exports = module.exports = storage => new Market(storage)
@@ -55,6 +56,16 @@ class Market extends EventEmitter {
       if (err) return cb(err)
       self._keyPair = kp
       cb(null)
+    })
+  }
+
+  buying (cb) {
+    this._db.list('buys/feeds', { recursive: false }, function (err, nodes) {
+      if (err) return cb(err)
+      const keys = nodes.map(function (node) {
+        return Buffer.from(node.key.split('/')[2], 'hex')
+      })
+      cb(null, keys)
     })
   }
 
@@ -135,14 +146,14 @@ class Buyer extends EventEmitter {
 
       stream.on('error', noop)
       stream.once('readable', function () {
-        const first = messages.Receipt.decode(stream.read())
+        const first = messages.Receipt.decode(shift(stream))
         if (first.invalid) return self._destroy(new Error(first.invalid), socket)
         const feed = self._setFeed(first.uniqueFeed)
 
         self.emit('validate', first.uniqueFeed)
 
         const p = protocol({
-          extensions: [ 'hypermarket/invalid' ]
+          extensions: [ 'dazaar/invalid' ]
         })
 
         pump(stream, feed.replicate({ live: true, encrypt: false, stream: p }), stream)
@@ -150,7 +161,7 @@ class Buyer extends EventEmitter {
         feed.ready(function () {
           if (!p.feeds.length) return
           p.feeds[0].on('extension', function (name, data) {
-            if (name === 'hypermarket/invalid') {
+            if (name === 'dazaar/invalid') {
               self._destroy(new Error(data.toString()), socket)
               p.destroy()
             }
@@ -281,8 +292,8 @@ class Seller extends EventEmitter {
             self.validate(copy, function (err) {
               if (stream.destroyed) return
               if (err) {
-                if (!p.remoteSupports('hypermarket/invalid') || !p.feeds.length) return stream.destroy(err)
-                p.feeds[0].extension('hypermarket/invalid', Buffer.from(err.message))
+                if (!p.remoteSupports('dazaar/invalid') || !p.feeds.length) return stream.destroy(err)
+                p.feeds[0].extension('dazaar/invalid', Buffer.from(err.message))
                 stream.end()
                 return
               }
@@ -319,11 +330,13 @@ class Seller extends EventEmitter {
           const uniqueFeed = multikey(self.feed, decodeKeys(node.value.uniqueFeed))
 
           p = protocol({
-            extensions: [ 'hypermarket/invalid' ]
+            extensions: [ 'dazaar/invalid' ]
           })
 
           stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key })) // send the key first
-          pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream)
+          pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream, function () {
+            uniqueFeed.close()
+          })
         })
       }
     })

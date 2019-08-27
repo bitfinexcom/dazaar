@@ -172,6 +172,10 @@ Get a list of keys of the hypercores you are selling (since you created the mark
 
 Helper to determine if an instance is a seller.
 
+#### `market.buying(callback)`
+
+Get a list of keys of the hypercores you are buying (since you created the market).
+
 #### `const bool = market.isBuyer(instance)`
 
 Helper to determine if an instance is a buyer.
