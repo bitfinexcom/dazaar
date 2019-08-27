@@ -24,10 +24,10 @@ const argv = require('minimist')(process.argv.slice(2), {
   }
 })
 
-if (argv.h) {
+function printHelp () {
   console.info(`
 
-Usage: dazaar-fetch [OPTIONS] [KEY]
+Usage: dazaar-fetch [OPTIONS] <KEY>
 
 Options:
   -p, --path PATH     Where to store the dazaar state, including keys.
@@ -41,6 +41,10 @@ Options:
 Arguments:
   KEY                 Hex encoded public key provided by the seller
 `)
+}
+
+if (argv.h) {
+  printHelp()
   process.exit(0)
 }
 
@@ -51,6 +55,12 @@ if (argv.version) {
 
 const spath = new Path(argv.p)
 const prefixPath = prefix => f => raf(spath.resolve(prefix, f))
+
+if (!argv._[0]) {
+  console.error('ERROR: dazaar key is missing')
+  printHelp()
+  process.exit(1)
+}
 
 const m = market(prefixPath('.'))
 const key = argv.card ? Buffer.from(require(path.resolve(argv.card)).id, 'hex') : Buffer.from(argv._[0], 'hex')
