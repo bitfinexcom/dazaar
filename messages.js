@@ -39,6 +39,10 @@ function defineReceipt () {
       var len = enc[1].encodingLength(obj.invalid)
       length += 1 + len
     }
+    if (defined(obj.info)) {
+      var len = enc[0].encodingLength(obj.info)
+      length += 1 + len
+    }
     return length
   }
 
@@ -56,6 +60,11 @@ function defineReceipt () {
       enc[1].encode(obj.invalid, buf, offset)
       offset += enc[1].encode.bytes
     }
+    if (defined(obj.info)) {
+      buf[offset++] = 26
+      enc[0].encode(obj.info, buf, offset)
+      offset += enc[0].encode.bytes
+    }
     encode.bytes = offset - oldOffset
     return buf
   }
@@ -67,7 +76,8 @@ function defineReceipt () {
     var oldOffset = offset
     var obj = {
       uniqueFeed: null,
-      invalid: ""
+      invalid: "",
+      info: null
     }
     while (true) {
       if (end <= offset) {
@@ -85,6 +95,10 @@ function defineReceipt () {
         case 2:
         obj.invalid = enc[1].decode(buf, offset)
         offset += enc[1].decode.bytes
+        break
+        case 3:
+        obj.info = enc[0].decode(buf, offset)
+        offset += enc[0].decode.bytes
         break
         default:
         offset = skip(prefix & 7, buf, offset)
