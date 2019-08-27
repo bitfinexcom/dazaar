@@ -334,7 +334,9 @@ class Seller extends EventEmitter {
           })
 
           stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key })) // send the key first
-          pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream)
+          pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream, function () {
+            uniqueFeed.close()
+          })
         })
       }
     })

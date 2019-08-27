@@ -9,7 +9,7 @@
     "fd-lock": "^1.0.2",
     "hypercore": "^7.6.1",
     "hypercore-crypto": "^1.0.0",
-    "hypercore-multi-key": "^1.0.1",
+    "hypercore-multi-key": "^2.0.0",
     "hypercore-protocol": "^6.7.1",
     "hyperswarm": "^2.0.4",
     "hypertrie": "^3.7.1",
