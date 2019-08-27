@@ -58,6 +58,16 @@ class Market extends EventEmitter {
     })
   }
 
+  buying (cb) {
+    this._db.list('buys/feeds', { recursive: false }, function (err, nodes) {
+      if (err) return cb(err)
+      const keys = nodes.map(function (node) {
+        return Buffer.from(node.key.split('/')[2], 'hex')
+      })
+      cb(null, keys)
+    })
+  }
+
   selling (cb) {
     this._db.list('sales', { recursive: false }, function (err, nodes) {
       if (err) return cb(err)
