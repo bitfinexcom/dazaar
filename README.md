@@ -180,7 +180,7 @@ The feed we bought.
 
 #### `market.selling(callback)`
 
-Get a list of keys of the hypercores you are selling (since you created the market).
+Get a list of the hypercores and their corresponding sales key you are selling (since you created the market).
 
 #### `const bool = market.isSeller(instance)`
 
@@ -188,7 +188,7 @@ Helper to determine if an instance is a seller.
 
 #### `market.buying(callback)`
 
-Get a list of keys of the hypercores you are buying (since you created the market).
+Get a list of hypercores and their corresponding sales key you are buying (since you created the market).
 
 #### `const bool = market.isBuyer(instance)`
 

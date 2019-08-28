@@ -62,20 +62,34 @@ class Market extends EventEmitter {
   buying (cb) {
     this._db.list('buys/feeds', { recursive: false }, function (err, nodes) {
       if (err) return cb(err)
-      const keys = nodes.map(function (node) {
-        return Buffer.from(node.key.split('/')[2], 'hex')
+      const list = nodes.map(function (node) {
+        const key = Buffer.from(node.key.split('/')[2], 'hex')
+        const feed = Buffer.from(node.value.uniqueFeed, 'hex')
+        return { key, feed }
       })
-      cb(null, keys)
+      cb(null, list)
     })
   }
 
   selling (cb) {
+    const self = this
     this._db.list('sales', { recursive: false }, function (err, nodes) {
       if (err) return cb(err)
-      const keys = nodes.map(function (node) {
+
+      const list = []
+      const feeds = nodes.map(function (node) {
         return Buffer.from(node.key.split('/')[1], 'hex')
       })
-      cb(null, keys)
+
+      loop(null, null)
+
+      function loop (err, node) {
+        if (err) return cb(err)
+        if (node) list.push({ key: decodeKeys(node.value).publicKey, feed: feeds[list.length] })
+        if (list.length === feeds.length) return cb(null, list)
+        const feed = feeds[list.length]
+        self._db.get('sales/' + feed.toString('hex') + '/key-pair', loop)
+      }
     })
   }
 
