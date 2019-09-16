@@ -16,7 +16,8 @@ const argv = require('minimist')(process.argv.slice(2), {
     f: 'feed',
     h: 'help',
     p: 'path',
-    c: 'card'
+    c: 'card',
+    v: 'version'
   },
   default: {
     p: DAZAAR_PATH
