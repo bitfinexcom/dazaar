@@ -15,7 +15,8 @@ const argv = require('minimist')(process.argv.slice(2), {
     k: 'private-key',
     a: 'account',
     c: 'card',
-    p: 'path'
+    p: 'path',
+    v: 'version'
   },
   default: {
     p: DAZAAR_PATH

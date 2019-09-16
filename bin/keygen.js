@@ -12,7 +12,8 @@ const argv = require('minimist')(process.argv.slice(2), {
   alias: {
     f: 'force',
     h: 'help',
-    p: 'path'
+    p: 'path',
+    v: 'version'
   },
   default: {
     p: DAZAAR_PATH
