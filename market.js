@@ -141,7 +141,7 @@ class Buyer extends EventEmitter {
   }
 
   replicate () {
-    const [ a, b ] = createStreamProxy()
+    const [a, b] = createStreamProxy()
     a.on('error', b.destroy.bind(b)) // preserve error message
     this.onsocket(a)
     return b
@@ -170,7 +170,7 @@ class Buyer extends EventEmitter {
         if (self.info) self.emit('valid', self.info)
 
         const p = protocol({
-          extensions: [ 'dazaar/invalid', 'dazaar/valid' ]
+          extensions: ['dazaar/invalid', 'dazaar/valid']
         })
 
         pump(stream, feed.replicate({ live: true, encrypt: false, stream: p }), stream)
@@ -283,7 +283,7 @@ class Seller extends EventEmitter {
   }
 
   replicate () {
-    const [ a, b ] = createStreamProxy()
+    const [a, b] = createStreamProxy()
     this.onsocket(a)
     return b
   }
@@ -359,7 +359,7 @@ class Seller extends EventEmitter {
           const uniqueFeed = multikey(self.feed, decodeKeys(node.value.uniqueFeed))
 
           p = protocol({
-            extensions: [ 'dazaar/invalid', 'dazaar/valid' ]
+            extensions: ['dazaar/invalid', 'dazaar/valid']
           })
 
           stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key, info: self.info && Buffer.from(JSON.stringify(self.info)) })) // send the key first
