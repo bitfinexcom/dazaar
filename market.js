@@ -1,17 +1,12 @@
-const noise = require('noise-peer')
 const stream = require('stream')
 const hypertrie = require('hypertrie')
 const hypercore = require('hypercore')
-const protocol = require('hypercore-protocol')
 const crypto = require('hypercore-crypto')
 const multikey = require('hypercore-multi-key')
-const pump = require('pump')
-const duplexify = require('duplexify')
 const raf = require('random-access-file')
 const thunky = require('thunky')
 const { EventEmitter } = require('events')
-const shift = require('stream-shift')
-const messages = require('./messages')
+const Protocol = require('hypercore-protocol')
 
 exports = module.exports = storage => new Market(storage)
 
@@ -140,62 +135,50 @@ class Buyer extends EventEmitter {
     this._market.ready(cb)
   }
 
-  replicate () {
-    const [a, b] = createStreamProxy()
-    a.on('error', b.destroy.bind(b)) // preserve error message
-    this.onsocket(a)
-    return b
-  }
+  replicate (initiator) {
+    if (typeof initiator !== 'boolean') initiator = true
 
-  onsocket (socket) {
     const self = this
 
-    this._market.ready(function (err) {
-      if (err) return socket.destroy(err)
-
-      const stream = noise(socket, true, {
-        pattern: 'XK',
-        remoteStaticKey: self.seller,
-        staticKeyPair: self._market._keyPair
-      })
-
-      stream.on('error', noop)
-      stream.once('readable', function () {
-        const first = messages.Receipt.decode(shift(stream))
-        if (first.invalid) return self._destroy(new Error(first.invalid), socket)
-        const feed = self._setFeed(first.uniqueFeed)
-
-        self.info = tryParse(first.info)
-        self.emit('validate', first.uniqueFeed)
-        if (self.info) self.emit('valid', self.info)
-
-        const p = protocol({
-          extensions: ['dazaar/invalid', 'dazaar/valid']
+    const p = new Protocol(initiator, {
+      keyPair (done) {
+        self._market.ready(function (err) {
+          if (err) return done(err)
+          done(null, self._market.keyPair)
         })
-
-        pump(stream, feed.replicate({ live: true, encrypt: false, stream: p }), stream)
-
-        feed.ready(function () {
-          feed.on('extension', function (name, data) {
-            if (name === 'dazaar/invalid') {
-              self._destroy(new Error(data.toString()), socket)
-              p.destroy()
-            } else if (name === 'dazaar/valid') {
-              const info = tryParse(data)
-              if (info) {
-                self.info = info
-                self.emit('valid', info)
-              }
-            }
-          })
-        })
-      })
+      },
+      onauthenticate (remotePublicKey, done) {
+        if (remotePublicKey.equals(self.seller)) return done(null)
+        const error = new Error('Not connected to seller')
+        self.emit('invalid', error)
+        done(error)
+      }
     })
-  }
 
-  _destroy (err, socket) {
-    socket.destroy(err)
-    this.emit('invalidate', err)
+    p.registerExtension('dazaar/one-time-feed', {
+      onmessage (uniqueFeed) {
+        const feed = self._setFeed(uniqueFeed)
+        self.emit('validate', uniqueFeed)
+        feed.replicate(p, { live: true })
+      }
+    })
+
+    p.registerExtension('dazaar/valid', {
+      encoding: 'json',
+      onmessage (info) {
+        self.info = info
+        self.emit('valid', info)
+      }
+    })
+
+    p.registerExtension('dazaar/invalid', {
+      encoding: 'json',
+      onmessage (info) {
+        self.emit('invalid', new Error(info.error))
+      }
+    })
+
+    return p
   }
 
   _setFeed (key) {
@@ -282,101 +265,126 @@ class Seller extends EventEmitter {
     })
   }
 
-  replicate () {
-    const [a, b] = createStreamProxy()
-    this.onsocket(a)
-    return b
-  }
+  replicate (initiator) {
+    if (typeof initiator !== 'boolean') initiator = false
 
-  onsocket (socket) {
     const self = this
+
+    let uniqueFeed
     let timeout
+    let isValid
 
-    this.ready(function (err) {
-      if (err) return socket.destroy(err)
-
-      let p
-
-      const stream = noise(socket, false, {
-        pattern: 'XK',
-        staticKeyPair: self._keyPair,
-        onstatickey: function (remoteKey, done) {
-          const copy = Buffer.alloc(remoteKey.length)
-          remoteKey.copy(copy)
-
-          check(function () {
-            sell(copy)
-            done(null)
-          })
-
-          function check (after) {
-            after = after || noop
-            self.emit('validate', copy)
-            self.validate(copy, function (err, info) {
-              if (stream.destroyed) return
-              if (err) {
-                self.emit('invalidate', copy, err)
-                if (!p || !p.remoteSupports('dazaar/invalid') || !p.feeds.length) return stream.destroy(err)
-                sendExt(p, 'dazaar/invalid', Buffer.from(err.message))
-                stream.end()
-                return
-              }
-              if (typeof info === 'object' && info) {
-                self.info = info
-                self.emit('valid', copy, info)
-                if (p && p.remoteSupports('dazaar/valid')) sendExt(p, 'dazaar/valid', Buffer.from(JSON.stringify(info)))
-              }
-              timeout = setTimeout(check, self.revalidate)
-              after(null)
-            })
-          }
-        }
-      })
-
-      stream.on('error', noop)
-      stream.on('close', onclose)
-      stream.on('end', onclose)
-
-      function onclose () {
-        if (timeout) clearTimeout(timeout)
-        timeout = null
-      }
-
-      function sell (remoteKey) {
-        const key = 'sales/' + self.feed.key.toString('hex') + '/feeds/' + remoteKey.toString('hex')
-        self._db.get(key, function (err, node) {
-          if (err) return stream.destroy(err)
-
-          if (!node) {
-            const keyPair = crypto.keyPair()
-            self._db.put(key, { buyer: remoteKey.toString('hex'), uniqueFeed: encodeKeys(keyPair) }, function (err) {
-              if (err) return stream.destroy(err)
-              sell(remoteKey)
-            })
-            return
-          }
-
-          const uniqueFeed = multikey(self.feed, decodeKeys(node.value.uniqueFeed))
-
-          p = protocol({
-            extensions: ['dazaar/invalid', 'dazaar/valid']
-          })
-
-          stream.write(messages.Receipt.encode({ uniqueFeed: uniqueFeed.key, info: self.info && Buffer.from(JSON.stringify(self.info)) })) // send the key first
-          pump(stream, uniqueFeed.replicate({ live: true, encrypt: false, stream: p }), stream, function () {
-            uniqueFeed.close()
-          })
+    const p = new Protocol(initiator, {
+      keyPair (done) {
+        self.ready(function (err) {
+          if (err) return done(err)
+          done(null, self._keyPair)
         })
+      },
+      onauthenticate (remotePublicKey, done) {
+        done()
+      },
+      onhandshake () {
+        validate()
+
+        function setUploading (error, info) {
+          const uploading = !error
+          if (uniqueFeed) {
+            uniqueFeed.setUploading(uploading)
+          }
+
+          if (error) {
+            if (isValid !== false) {
+              isValid = false
+              invalid.send({ error: error.message })
+              self.emit('invalid', p.remotePublicKey, error)
+            }
+          } else {
+            if (isValid !== true) {
+              isValid = true
+            }
+            if (info && typeof info === 'object') {
+              self.info = info
+              self.emit('valid', p.remotePublicKey, info)
+              valid.send(info)
+            } else {
+              self.emit('valid', p.remotePublicKey, null)
+            }
+          }
+
+          timeout = setTimeout(validate, self.revalidate)
+        }
+
+        function onvalidate (err, info) {
+          if (err) return setUploading(err, null)
+          getUniqueFeed(function (err, feed) {
+            if (err) return stream.destroy(err)
+            if (!uniqueFeed) {
+              uniqueFeed = feed
+              oneTimeFeed.send(feed.key)
+              uniqueFeed.replicate(p, { live: true })
+            }
+            setUploading(null, info)
+          })
+        }
+
+        function validate () {
+          if (p.destroyed) return
+          self.emit('validate', p.remotePublicKey)
+          self.validate(p.remotePublicKey, function (err, info) {
+            if (p.destroyed) return
+            onvalidate(err, info)
+          })
+        }
       }
     })
-  }
-}
 
-function tryParse (data) {
-  try {
-    return data && JSON.parse(data)
-  } catch (_) {
-    return null
+    const oneTimeFeed = p.registerExtension('dazaar/one-time-feed')
+    const valid = p.registerExtension('dazaar/valid', { encoding: 'json' })
+    const invalid = p.registerExtension('dazaar/invalid', { encoding: 'json' })
+
+    p.on('close', function () {
+      clearTimeout(timeout)
+      if (uniqueFeed) uniqueFeed.close()
+    })
+
+    return p
+
+    function getUniqueFeed (cb) {
+      if (uniqueFeed) return cb(null, uniqueFeed)
+      getUniqueKeyPair(function (err, keyPair) {
+        if (err) return cb(err)
+        if (p.destroyed) return cb(new Error('Stream destroyed'))
+        const feed = multikey(self.feed, decodeKeys(keyPair))
+        feed.ready(function (err) {
+          if (err) return cb(err)
+          if (p.destroyed) {
+            feed.close()
+            return cb(new Error('Stream destroyed'))
+          }
+          cb(null, feed)
+        })
+      })
+    }
+
+    function getUniqueKeyPair (cb) {
+      const key = 'sales/' + self.feed.key.toString('hex') + '/feeds/' + p.remotePublicKey.toString('hex')
+
+      self._db.get(key, function (err, node) {
+        if (err) return cb(err)
+
+        if (!node) {
+          const keyPair = crypto.keyPair()
+          self._db.put(key, { buyer: p.remotePublicKey.toString('hex'), uniqueFeed: encodeKeys(keyPair) }, function (err) {
+            if (err) return cb(err)
+            cb(null, keyPair)
+          })
+          return
+        }
+
+        cb(null, decodeKeys(node.value.uniqueFeed))
+      })
+    }
   }
 }
 
@@ -394,22 +402,11 @@ function encodeKeys (keys) {
   }
 }
 
-function createStreamProxy () {
-  const inc = new stream.PassThrough()
-  const out = new stream.PassThrough()
-  const a = duplexify(inc, out)
-  const b = duplexify(out, inc)
-
-  return [a, b]
-}
-
-function noop () {}
-
 function loadKey (db, key, cb) {
   db.get(key, function (err, node) {
     if (err) return cb(err)
     if (node) return cb(null, decodeKeys(node.value))
-    const keyPair = noise.keygen()
+    const keyPair = Protocol.keyPair()
     db.put(key, encodeKeys(keyPair), function (err) {
       if (err) return cb(err)
       cb(null, keyPair)
@@ -422,11 +419,5 @@ function requireMaybe (name) {
     return require(name)
   } catch (_) {
     return null
-  }
-}
-
-function sendExt (p, type, buf) {
-  for (const f of p.feeds) {
-    f.extension(type, buf)
   }
 }
