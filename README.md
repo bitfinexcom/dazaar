@@ -130,6 +130,14 @@ peer discovery on a DHT. See the [Swarm](#swarm) section below.
 The public key of this seller. Must be communicated to potential buyers, as
 this is needed in the handshake to buy the data.
 
+#### `seller.send(type, message)`
+
+Send a custom message to the buying peers you are connected to.
+
+#### `seller.receive(type, onmessage)`
+
+Setup a handler to be called when a buying peer sends a message of a specific type.
+
 #### `const buyer = market.buy(sellerKey)`
 
 Buy a hypercore by creating a buyer instance.
@@ -177,6 +185,14 @@ Emitted when a remote seller invalidates us with the error they provided.
 #### `buyer.feed`
 
 The feed we bought.
+
+#### `buyer.send(type, message)`
+
+Send a custom message to the selling peers you are connected to.
+
+#### `buyer.receive(type, onmessage)`
+
+Setup a handler to be called when a selling peer sends a message of a specific type.
 
 #### `market.selling(callback)`
 

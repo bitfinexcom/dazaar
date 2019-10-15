@@ -109,6 +109,8 @@ class Buyer extends EventEmitter {
 
     this._db = db
     this._market = market
+    this._receiving = new Map()
+    this._sendable = new Set()
 
     const self = this
 
@@ -121,6 +123,14 @@ class Buyer extends EventEmitter {
       if (err) self.emit('error', err)
       else self.emit('ready')
     })
+  }
+
+  receive (name, fn) {
+    this._receiving.set(name, fn)
+  }
+
+  send (name, message) {
+    for (const m of this._sendable) m.send({ name, message })
   }
 
   get key () {
@@ -154,6 +164,8 @@ class Buyer extends EventEmitter {
         done(error)
       }
     })
+
+    registerUserMessage(this, p)
 
     p.registerExtension('dazaar/one-time-feed', {
       onmessage (uniqueFeed) {
@@ -211,6 +223,8 @@ class Seller extends EventEmitter {
     this._db = db
     this._market = market
     this._keyPair = null
+    this._receiving = new Map()
+    this._sendable = new Set()
 
     const self = this
 
@@ -219,6 +233,14 @@ class Seller extends EventEmitter {
       if (err) self.emit('error', err)
       else self.emit('ready')
     })
+  }
+
+  receive (name, fn) {
+    this._receiving.set(name, fn)
+  }
+
+  send (name, message) {
+    for (const m of this._sendable) m.send({ name, message })
   }
 
   get key () {
@@ -343,6 +365,8 @@ class Seller extends EventEmitter {
     const valid = p.registerExtension('dazaar/valid', { encoding: 'json' })
     const invalid = p.registerExtension('dazaar/invalid', { encoding: 'json' })
 
+    registerUserMessage(this, p)
+
     p.on('close', function () {
       clearTimeout(timeout)
       if (uniqueFeed) uniqueFeed.close()
@@ -400,6 +424,19 @@ function encodeKeys (keys) {
     publicKey: keys.publicKey.toString('hex'),
     secretKey: keys.secretKey.toString('hex')
   }
+}
+
+function registerUserMessage (self, stream) {
+  const userMessage = stream.registerExtension('dazaar/user-message', {
+    encoding: 'json',
+    onmessage (data) {
+      const fn = self._receiving.get(data.name)
+      if (fn) fn(data.message)
+    }
+  })
+
+  self._sendable.add(userMessage)
+  stream.on('close', () => self._sendable.delete(userMessage))
 }
 
 function loadKey (db, key, cb) {
