@@ -78,6 +78,10 @@ buyer.ready(function (err) {
     })
   }
 
+  buyer.on('invalid', function (err) {
+    console.error('Payment invalid: ' + err.message)
+  })
+
   swarm(buyer).once('connection', function (_, info) {
     if (!argv.tail) return
 

@@ -5,7 +5,6 @@ const pump = require('pump')
 const Path = require('sandbox-path')
 const market = require('../market')
 const raf = require('random-access-file')
-let eos = null
 
 const DAZAAR_PATH = process.env.DAZAAR_PATH || require('path').join(process.cwd(), '.dazaar')
 
@@ -66,7 +65,7 @@ const m = market(prefixPath('.'))
 const feed = hypercore(existingFeed || prefixPath('data'))
 
 const subscribers = new Map()
-const pay = !isFree && [].concat(card.payment || []).filter(p => p.method === 'EOS')[0]
+const pay = !isFree && [].concat(card.payment || []).filter(p => p.currency === 'EOS')[0]
 
 if (!pay && !isFree) {
   console.error('Dazaar card does not include a valid payment method')
@@ -74,59 +73,28 @@ if (!pay && !isFree) {
   process.exit(1)
 }
 
+const Payment = !isFree && require('dazaar-payment')
+
 feed.ready(function (err) {
   if (err) throw err
 
   if (existingFeed == null) pump(process.stdin, feed.createWriteStream())
 
+  let payment = null
+
   const seller = m.sell(feed, {
     validate: function (key, cb) {
       if (isFree) return cb(null)
-
-      const sub = tail(key)
-
-      if (sub.synced) return cb(sub.active() ? null : new Error('Subscription is not active'))
-
-      sub.on('update', onupdate)
-      sub.on('synced', onsynced)
-
-      function onupdate () {
-        if (sub.active()) onsynced()
-      }
-
-      function onsynced () {
-        cleanup()
-        cb(sub.active() ? null : new Error('Subscription is not active'))
-      }
-
-      function cleanup () {
-        sub.removeListener('update', onupdate)
-        sub.removeListener('synced', onsynced)
-      }
+      payment.validate(key, cb)
     }
   })
 
   seller.ready(function (err) {
     if (err) throw err
 
+    payment = Payment && new Payment(seller.key, card.payment)
     console.log(seller.key.toString('hex'))
 
     swarm(seller)
   })
-
-  function tail (buyer) {
-    if (!eos) eos = require('dazaar-eos-stream')({ account: pay.payTo })
-
-    const k = buyer.toString('hex')
-    const filter = 'dazaar: ' + seller.key.toString('hex') + ' ' + k
-
-    let sub = subscribers.get(k)
-
-    if (!sub) {
-      sub = eos.subscription(filter, pay)
-      subscribers.set(k, sub)
-    }
-
-    return sub
-  }
 })

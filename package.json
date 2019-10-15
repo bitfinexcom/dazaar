@@ -4,7 +4,7 @@
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
   "dependencies": {
-    "dazaar-eos-stream": "1.0.0",
+    "dazaar-payment": "bitfinexcom/dazaar-payment",
     "fd-lock": "^1.0.2",
     "hypercore": "^8.2.5",
     "hypercore-crypto": "^1.0.0",
