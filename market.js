@@ -154,7 +154,7 @@ class Buyer extends EventEmitter {
       keyPair (done) {
         self._market.ready(function (err) {
           if (err) return done(err)
-          done(null, self._market.keyPair)
+          done(null, self._market._keyPair)
         })
       },
       onauthenticate (remotePublicKey, done) {
