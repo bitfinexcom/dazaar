@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const eos = require('dazaar-eos-stream')
+const Payment = require('dazaar-payment')
+const Scatter = require('dazaar-scatter-pay')
 const Path = require('sandbox-path')
 const path = require('path')
 const market = require('../market')
@@ -39,6 +40,8 @@ Options:
 
 Arguments:
   AMOUNT              How much do you want to pay? Fx '1.2000 EOS'
+
+If no private-key is provided Scatter will be used to perform the transaction
 `)
   process.exit(0)
 }
@@ -51,49 +54,46 @@ if (argv.version) {
   console.info(require('../package.json').version)
   process.exit(0)
 }
-if (!argv.k) {
-  console.error('--private-key is required')
-  process.exit(1)
-}
-if (!argv.a) {
-  console.error('--account is required')
+if (!argv.c) {
+  console.log('--card is required')
   process.exit(1)
 }
 if (!AMOUNT) {
   console.error('You must specify amount')
   process.exit(1)
 }
+if (!argv.k) {
+  console.error('Using Scatter to perform the payment as no private key is passed')
+}
+if (!argv.a && argv.k) {
+  console.error('--account is required')
+  process.exit(1)
+}
 
 const m = market(prefixPath('.'))
-
 const card = require(path.resolve(argv.card))
 
-const { pay } = eos({
-  account: argv.a,
-  privateKey: argv.k,
-  permission: argv.permission
-})
+const sellerKey = Buffer.from(card.id, 'hex')
 
 m.ready(function (err) {
   if (err) throw err
 
   const payments = [].concat(card.payment || [])
+  const pay = argv.k ? new Payment(sellerKey, payments) : new Scatter(payments, sellerKey)
+  const provider = pay.providers.find(x => x)
 
-  if (!payments.some(payEOS)) {
-    console.log('dazaar-buy only supports EOS at the moment')
+  if (!provider) {
+    console.error('Payments not supported')
     process.exit(2)
   }
 
-  function payEOS (p) {
-    if (p.method !== 'EOS') return false
+  if (argv.k) provider.buy(m.buyer, AMOUNT, { account: argv.a, privateKey: argv.k, permission: argv.permission }, done)
+  else provider.buy(m.buyer, AMOUNT, done)
 
-    pay(p.payTo, AMOUNT, 'dazaar: ' + card.id + ' ' + m.buyer.toString('hex'), function (err) {
-      if (err) throw err
-
-      console.log('Your payment of ' + AMOUNT + ' to ' + p.payTo + ' has been finalised')
-      console.log('Try fetching ' + card.id)
-    })
-
-    return true
+  function done (err) {
+    if (err) throw err
+    console.log('Your payment of ' + AMOUNT + ' to ' + sellerKey.toString('hex') + ' has been finalised')
+    console.log('Try fetching ' + sellerKey.toString('hex'))
+    process.exit(0)
   }
 })

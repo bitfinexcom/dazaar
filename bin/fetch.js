@@ -57,7 +57,7 @@ if (argv.version) {
 const spath = new Path(argv.p)
 const prefixPath = prefix => f => raf(spath.resolve(prefix, f))
 
-if (!argv._[0]) {
+if (!argv._[0] && !argv.card) {
   console.error('ERROR: dazaar key is missing')
   printHelp()
   process.exit(1)
@@ -69,14 +69,14 @@ const buyer = m.buy(key, {
   sparse: argv.tail
 })
 
+if (!argv.tail) {
+  buyer.once('feed', function () {
+    pump(buyer.feed.createReadStream({ live: argv.live }), process.stdout)
+  })
+}
+
 buyer.ready(function (err) {
   if (err) throw err
-
-  if (!argv.tail) {
-    buyer.once('feed', function () {
-      pump(buyer.feed.createReadStream({ live: argv.live }), process.stdout)
-    })
-  }
 
   buyer.on('invalid', function (err) {
     console.error('Payment invalid: ' + err.message)
@@ -93,6 +93,7 @@ buyer.ready(function (err) {
     function onfeed () {
       buyer.feed.update({ ifAvailable: true }, function () {
         const start = Math.max(0, buyer.feed.length - 1)
+
         pump(buyer.feed.createReadStream({ live: true, start }), process.stdout)
       })
     }

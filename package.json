@@ -5,6 +5,7 @@
   "main": "market.js",
   "dependencies": {
     "dazaar-payment": "bitfinexcom/dazaar-payment",
+    "dazaar-scatter-pay": "github:bitfinexcom/dazaar-scatter-pay",
     "fd-lock": "^1.0.2",
     "hypercore": "^8.2.5",
     "hypercore-crypto": "^1.0.0",
