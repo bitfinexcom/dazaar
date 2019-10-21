@@ -386,6 +386,7 @@ class Seller extends EventEmitter {
             feed.close()
             return cb(new Error('Stream destroyed'))
           }
+          self.emit('buyer-feed', feed, p.remotePublicKey)
           cb(null, feed)
         })
       })
