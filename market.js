@@ -7,8 +7,9 @@ const raf = require('random-access-file')
 const thunky = require('thunky')
 const { EventEmitter } = require('events')
 const Protocol = require('hypercore-protocol')
+const derive = require('derive-key')
 
-exports = module.exports = storage => new Market(storage)
+exports = module.exports = (storage, opts) => new Market(storage, opts)
 
 exports.isSeller = function (s) {
   return s instanceof Seller
@@ -19,7 +20,7 @@ exports.isBuyer = function (b) {
 }
 
 class Market extends EventEmitter {
-  constructor (storage) {
+  constructor (storage, opts) {
     super()
 
     this._storage = typeof storage === 'function' ? storage : defaultStorage
@@ -28,6 +29,7 @@ class Market extends EventEmitter {
 
     const self = this
 
+    this.masterKey = (opts && opts.masterKey) || null
     this.ready = thunky(this._ready.bind(this))
     this.ready(function (err) {
       if (err) self.emit('error', err)
@@ -47,10 +49,24 @@ class Market extends EventEmitter {
   _ready (cb) {
     const self = this
 
-    loadKey(this._db, 'buys/key-pair', function (err, kp) {
+    this._loadMasterKey(function (err) {
       if (err) return cb(err)
-      self._keyPair = kp
+      self._keyPair = Protocol.keyPair(derive('dazaar', self.masterKey, 'buys/key-pair'))
       cb(null)
+    })
+  }
+
+  _loadMasterKey (cb) {
+    this._db.get('master-key', (err, masterKey) => {
+      if (err) return cb(err)
+
+      if (masterKey) {
+        this.masterKey = Buffer.from(masterKey.value, 'hex')
+        return cb(null)
+      }
+
+      this.masterKey = this.masterKey || crypto.randomBytes(32)
+      this._db.put('master-key', this.masterKey.toString('hex'), cb)
     })
   }
 
@@ -256,7 +272,7 @@ class Seller extends EventEmitter {
     this.feed.ready(function (err) {
       if (err) return cb(err)
       const key = 'sales/' + self.feed.key.toString('hex') + '/key-pair'
-      loadKey(self._db, key, function (err, kp) {
+      loadKey(self._market, self._db, key, function (err, kp) {
         if (err) return cb(err)
         self._keyPair = kp
         cb(null)
@@ -399,7 +415,7 @@ class Seller extends EventEmitter {
         if (err) return cb(err)
 
         if (!node) {
-          const keyPair = crypto.keyPair()
+          const keyPair = crypto.keyPair(derive('dazaar', self._market.masterKey, key))
           self._db.put(key, { buyer: p.remotePublicKey.toString('hex'), uniqueFeed: encodeKeys(keyPair) }, function (err) {
             if (err) return cb(err)
             cb(null, keyPair)
@@ -440,14 +456,17 @@ function registerUserMessage (self, stream) {
   stream.on('close', () => self._sendable.delete(userMessage))
 }
 
-function loadKey (db, key, cb) {
-  db.get(key, function (err, node) {
+function loadKey (market, db, key, cb) {
+  market.ready(function (err) {
     if (err) return cb(err)
-    if (node) return cb(null, decodeKeys(node.value))
-    const keyPair = Protocol.keyPair()
-    db.put(key, encodeKeys(keyPair), function (err) {
+    db.get(key, function (err, node) {
       if (err) return cb(err)
-      cb(null, keyPair)
+      if (node) return cb(null, decodeKeys(node.value))
+      const keyPair = Protocol.keyPair(derive('dazaar', market.masterKey, key))
+      db.put(key, encodeKeys(keyPair), function (err) {
+        if (err) return cb(err)
+        cb(null, keyPair)
+      })
     })
   })
 }

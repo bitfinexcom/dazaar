@@ -6,11 +6,12 @@
   "dependencies": {
     "dazaar-payment": "bitfinexcom/dazaar-payment",
     "dazaar-scatter-pay": "github:bitfinexcom/dazaar-scatter-pay",
+    "derive-key": "^1.0.0",
     "fd-lock": "^1.0.2",
     "hypercore": "^8.2.5",
     "hypercore-crypto": "^1.0.0",
     "hypercore-multi-key": "^3.0.0",
-    "hypercore-protocol": "^7.6.0",
+    "hypercore-protocol": "^7.7.0",
     "hyperswarm": "^2.0.4",
     "hypertrie": "^3.7.1",
     "minimist": "^1.2.0",
