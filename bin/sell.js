@@ -64,7 +64,6 @@ const existingFeed = argv._[0]
 const m = market(prefixPath('.'))
 const feed = hypercore(existingFeed || prefixPath('data'))
 
-const subscribers = new Map()
 const pay = !isFree && [].concat(card.payment || []).filter(p => p.currency === 'EOS')[0]
 
 if (!pay && !isFree) {
