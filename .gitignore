@@ -1,3 +1,6 @@
 node_modules
 sandbox.js
 tmp
+tmp-seller
+tmp-buyer
+tmp-feed

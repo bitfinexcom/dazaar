@@ -2,9 +2,16 @@ const hypercore = require('hypercore')
 const pump = require('pump')
 const market = require('../market')
 
-const m = market('./tmp')
+const m = market('./tmp-seller', {
+  masterKey: Buffer.from('16bc1bcba660dfa4c0104bda285543225b83152eb096c011bb4f47c076730078', 'hex')
+})
+const m2 = market('./tmp-buyer')
 
-const feed = hypercore('./tmp/data')
+m.ready(function () {
+  console.log('master key', m.masterKey.toString('hex'))
+})
+
+const feed = hypercore('./tmp-feed')
 
 feed.append('valuable')
 
@@ -19,10 +26,10 @@ seller.ready(function (err) {
   if (err) throw err // Do proper error handling
   console.log('seller key pair fully loaded ...')
 
-  const buyer = m.buy(seller.key)
+  const buyer = m2.buy(seller.key)
 
   buyer.on('feed', function () {
-    console.log('got the feed!')
+    console.log('got the feed!', buyer.feed.key.toString('hex'))
     buyer.feed.get(0, function (err, data) {
       if (err) throw err
       console.log('first feed entry: ' + data)
