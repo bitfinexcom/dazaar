@@ -448,7 +448,7 @@ function registerUserMessage (self, stream) {
     encoding: 'json',
     onmessage (data) {
       const fn = self._receiving.get(data.name)
-      if (fn) fn(data.message)
+      if (fn) fn(data.message, stream)
     }
   })
 
