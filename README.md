@@ -137,6 +137,8 @@ Send a custom message to the buying peers you are connected to.
 #### `seller.receive(type, onmessage)`
 
 Setup a handler to be called when a buying peer sends a message of a specific type.
+`onmessage` is called with `message` which is the message the remote send and `stream`
+which represents the stream it was sent on. Use `stream.remotePublicKey` to get the remotes buyer key out.
 
 #### `const buyer = market.buy(sellerKey)`
 
