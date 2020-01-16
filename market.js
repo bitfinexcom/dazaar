@@ -145,8 +145,18 @@ class Buyer extends EventEmitter {
     this._receiving.set(name, fn)
   }
 
-  send (name, message) {
-    for (const m of this._sendable) m.send({ name, message })
+  send (name, message, publicKey) {
+    if (typeof publicKey === 'string') publicKey = Buffer.from(publicKey, 'hex')
+
+    for (const m of this._sendable) {
+      if (m.stream === publicKey || (Buffer.isBuffer(publicKey) && m.stream.remotePublicKey && m.stream.remotePublicKey.equals(publicKey))) {
+        m.userMessage.send({ name, message })
+      }
+    }
+  }
+
+  broadcast (name, message) {
+    for (const m of this._sendable) m.userMessage.send({ name, message })
   }
 
   get key () {
@@ -255,8 +265,26 @@ class Seller extends EventEmitter {
     this._receiving.set(name, fn)
   }
 
-  send (name, message) {
-    for (const m of this._sendable) m.send({ name, message })
+  send (name, message, publicKey) {
+    if (typeof publicKey === 'string') publicKey = Buffer.from(publicKey, 'hex')
+
+    for (const m of this._sendable) {
+      if (m.stream === publicKey || (Buffer.isBuffer(publicKey) && m.stream.remotePublicKey && m.stream.remotePublicKey.equals(publicKey))) {
+        m.userMessage.send({ name, message })
+      }
+    }
+  }
+
+  broadcast (name, message) {
+    for (const m of this._sendable) m.userMessage.send({ name, message })
+  }
+
+  get connectedBuyers () {
+    const buyers = []
+    for (const { stream } of this._sendable) {
+      if (stream.remotePublicKey) buyers.push(stream.remotePublicKey)
+    }
+    return buyers
   }
 
   get key () {
@@ -452,8 +480,13 @@ function registerUserMessage (self, stream) {
     }
   })
 
-  self._sendable.add(userMessage)
-  stream.on('close', () => self._sendable.delete(userMessage))
+  const wrap = {
+    stream,
+    userMessage
+  }
+
+  self._sendable.add(wrap)
+  stream.on('close', () => self._sendable.delete(wrap))
 }
 
 function loadKey (market, db, key, cb) {
