@@ -130,15 +130,27 @@ peer discovery on a DHT. See the [Swarm](#swarm) section below.
 The public key of this seller. Must be communicated to potential buyers, as
 this is needed in the handshake to buy the data.
 
-#### `seller.send(type, message)`
+#### `seller.broadcast(type, message)`
 
-Send a custom message to the buying peers you are connected to.
+Send a custom message to all the buying peers you are connected to.
+
+#### `seller.send(type, message, streamOrBuyerKey)`
+
+Send a custom message to a specific buyer you are connected to.
+
+You specify the peer by either providing the replication stream or the public key identifying the buyer.
+
+#### `seller.connectedBuyers`
+
+A list of all the buyers (their public keys) you are currently connected to.
 
 #### `seller.receive(type, onmessage)`
 
 Setup a handler to be called when a buying peer sends a message of a specific type.
 `onmessage` is called with `message` which is the message the remote send and `stream`
-which represents the stream it was sent on. Use `stream.remotePublicKey` to get the remotes buyer key out.
+which represents the stream it was sent on.
+
+Use `stream.remotePublicKey` to get the remotes buyer key out.
 
 #### `const buyer = market.buy(sellerKey)`
 
@@ -188,13 +200,23 @@ Emitted when a remote seller invalidates us with the error they provided.
 
 The feed we bought.
 
-#### `buyer.send(type, message)`
+#### `buyer.broadcast(type, message)`
 
 Send a custom message to the selling peers you are connected to.
+
+#### `buyer.send(type, message, streamOrPublicKey)`
+
+Send a custom message to a specific selling peer you are connected to.
+
+You specify the peer by either providing the replication stream or the public key identifying the seller.
 
 #### `buyer.receive(type, onmessage)`
 
 Setup a handler to be called when a selling peer sends a message of a specific type.
+`onmessage` is called with `message` which is the message the remote send and `stream`
+which represents the stream it was sent on.
+
+Use `stream.remotePublicKey` to get the remotes buyer key out.
 
 #### `market.selling(callback)`
 
