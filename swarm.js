@@ -5,7 +5,7 @@ const market = require('./')
 module.exports = swarm
 
 function swarm (m, onerror, opts) {
-  if (!opts) opts = {}
+  if (!opts) opts = { announceLocalAddress: true }
   const swarm = network(opts)
 
   swarm.on('connection', function (socket) {
