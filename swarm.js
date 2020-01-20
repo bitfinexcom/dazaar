@@ -1,23 +1,29 @@
-const network = require('hyperswarm')
-const pump = require('pump')
-const market = require('./')
 
-module.exports = swarm
+const hyperswarm = require('hyperswarm')
 
-function swarm (m, onerror, opts) {
-  if (!opts) opts = { announceLocalAddress: true }
-  const swarm = network(opts)
+const a = hyperswarm({
+  announceLocalAddress: true
+})
+const b = hyperswarm({
+  announceLocalAddress: true
+})
 
-  swarm.on('connection', function (socket) {
-    const stream = m.replicate()
-    if (onerror) stream.on('error', onerror)
-    pump(socket, stream, socket)
-  })
+const topic = Buffer.alloc(32).fill('testing-' + Date.now())
 
-  const announce = market.isSeller(m)
-  const lookup = !announce
+b.on('peer', function (peer) {
+  console.log('got peer: ' + peer.host + ':' + peer.port + ' (local? ' + peer.local + ')')
+})
 
-  m.ready(() => swarm.join(m.discoveryKey, { announce, lookup }))
+a.on('connection', function () {
+  console.log('a connection')
+})
 
-  return swarm
-}
+b.on('connection', function () {
+  console.log('b connection')
+})
+
+a.join(topic, { announce: true })
+a.once('updated', function () {
+  console.log('updated')
+  b.join(topic, { lookup: true })
+})
