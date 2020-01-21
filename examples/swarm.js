@@ -14,30 +14,30 @@ const seller = m.sell(feed, {
   }
 })
 
-swarm(seller)
-
 seller.ready(function (err) {
   if (err) throw err
-
   console.log('seller key pair fully loaded ...')
+  swarm(seller, function () {
+    console.log('seller is fully announced ...')
 
-  const buyer = m.buy(seller.key)
+    const buyer = m.buy(seller.key)
 
-  buyer.on('feed', function () {
-    console.log('got the feed!')
-    buyer.feed.get(0, function (err, data) {
-      if (err) throw err
-      console.log('first feed entry: ' + data)
+    buyer.on('feed', function () {
+      console.log('got the feed!')
+      buyer.feed.get(0, function (err, data) {
+        if (err) throw err
+        console.log('first feed entry: ' + data)
+      })
     })
-  })
 
-  buyer.on('validate', function () {
-    console.log('remote validated us')
-  })
+    buyer.on('validate', function () {
+      console.log('remote validated us')
+    })
 
-  buyer.on('invalidate', function (err) {
-    console.log('remote invalidated us', err)
-  })
+    buyer.on('invalidate', function (err) {
+      console.log('remote invalidated us', err)
+    })
 
-  swarm(buyer)
+    swarm(buyer)
+  })
 })

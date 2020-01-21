@@ -12,7 +12,7 @@
     "hypercore-crypto": "^1.0.0",
     "hypercore-multi-key": "^3.0.0",
     "hypercore-protocol": "^7.7.0",
-    "hyperswarm": "^2.0.4",
+    "hyperswarm": "^2.5.0",
     "hypertrie": "^3.7.1",
     "minimist": "^1.2.0",
     "pump": "^3.0.0",
