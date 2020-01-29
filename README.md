@@ -152,6 +152,11 @@ which represents the stream it was sent on.
 
 Use `stream.remotePublicKey` to get the remotes buyer key out.
 
+#### `seller.destroy([cb])`
+
+Destroy the seller instance. Closes the attached Hypercore and any open replication streams.
+Will unannounce from any attached swarm as well.
+
 #### `const buyer = market.buy(sellerKey)`
 
 Buy a hypercore by creating a buyer instance.
@@ -218,6 +223,11 @@ which represents the stream it was sent on.
 
 Use `stream.remotePublicKey` to get the remotes buyer key out.
 
+#### `buyer.destroy([cb])`
+
+Destroy the buyer instance. Closes the attached Hypercore and any open replication streams.
+Will unannounce from any attached swarm as well.
+
 #### `market.selling(callback)`
 
 Get a list of the hypercores and their corresponding sales key you are selling (since you created the market).
@@ -233,6 +243,10 @@ Get a list of hypercores and their corresponding sales key you are buying (since
 #### `const bool = market.isBuyer(instance)`
 
 Helper to determine if an instance is a buyer.
+
+#### `market.destroy([cb])`
+
+Destroy the market instance. Closes internal state needed for the buyer and sellers.
 
 ## Swarm
 
@@ -261,4 +275,4 @@ MIT
 [ram]: https://github.com/random-access-storage/random-access-memory
 [raw]: https://github.com/random-access-storage/random-access-web
 [rac]: https://github.com/andrewosh/random-access-corestore
-[hyperswarm]: https://github.com/hyperswarm/network
+[hyperswarm]: https://github.com/hyperswarm/hyperswarm

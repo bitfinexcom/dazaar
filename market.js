@@ -82,6 +82,10 @@ class Market extends EventEmitter {
     })
   }
 
+  destroy (cb) {
+    this._db.feed.close(cb)
+  }
+
   selling (cb) {
     const self = this
     this._db.list('sales', { recursive: false }, function (err, nodes) {
@@ -122,11 +126,13 @@ class Buyer extends EventEmitter {
     this.feed = null
     this.sparse = !!opts.sparse
     this.info = null
+    this.destroyed = false
 
     this._db = db
     this._market = market
     this._receiving = new Map()
     this._sendable = new Set()
+    this._swarm = null
 
     const self = this
 
@@ -171,8 +177,31 @@ class Buyer extends EventEmitter {
     this._market.ready(cb)
   }
 
+  destroy (cb) {
+    if (this.destroyed) return
+    this.destroyed = true
+
+    if (!cb) cb = noop
+
+    this.ready((err) => {
+      if (err) return cb(err)
+
+      if (this._swarm) {
+        this._swarm.leave(this.discoveryKey)
+        this._swarm = null
+      }
+      for (const { stream } of this._sendable) {
+        stream.destroy(new Error('Buyer is destroyed'))
+      }
+
+      if (this.feed) this.feed.close(cb)
+      else cb(null)
+    })
+  }
+
   replicate (initiator) {
     if (typeof initiator !== 'boolean') initiator = true
+    if (this.destroyed) throw new Error('Buyer is destroyed')
 
     const self = this
 
@@ -245,6 +274,7 @@ class Seller extends EventEmitter {
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
     this.info = null
+    this.destroyed = false
 
     this._db = db
     this._market = market
@@ -331,8 +361,31 @@ class Seller extends EventEmitter {
     })
   }
 
+  destroy (cb) {
+    if (this.destroyed) return
+    this.destroyed = true
+
+    if (!cb) cb = noop
+
+    this.ready((err) => {
+      if (err) return cb(err)
+
+      if (this._swarm) {
+        this._swarm.leave(this.discoveryKey)
+        this._swarm = null
+      }
+      for (const { stream } of this._sendable) {
+        stream.destroy(new Error('Seller is destroyed'))
+      }
+
+      if (this.feed) this.feed.close(cb)
+      else cb(null)
+    })
+  }
+
   replicate (initiator) {
     if (typeof initiator !== 'boolean') initiator = false
+    if (this.destroyed) throw new Error('Seller is destroyed')
 
     const self = this
 
@@ -511,3 +564,5 @@ function requireMaybe (name) {
     return null
   }
 }
+
+function noop () {}
