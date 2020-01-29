@@ -45,4 +45,12 @@ seller.ready(function (err) {
   pump(stream, buyer.replicate(), stream, function (err) {
     console.log('replication ended', err)
   })
+
+  process.on('SIGINT', function () {
+    console.log('destroying instances ...')
+    buyer.destroy()
+    seller.destroy()
+    m.destroy()
+    m2.destroy()
+  })
 })

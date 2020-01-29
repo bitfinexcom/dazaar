@@ -1,4 +1,3 @@
-const hypercore = require('hypercore')
 const swarm = require('../swarm')
 const market = require('../market')
 
