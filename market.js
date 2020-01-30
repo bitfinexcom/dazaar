@@ -217,6 +217,13 @@ class Buyer extends EventEmitter {
         const error = new Error('Not connected to seller')
         self.emit('invalid', error)
         done(error)
+      },
+      onhandshake () {
+        process.nextTick(function () {
+          if (p.destroyed) return
+          self.emit('peer-add', p)
+          p.on('close', () => self.emit('peer-remove', p))
+        })
       }
     })
 
@@ -405,6 +412,12 @@ class Seller extends EventEmitter {
       },
       onhandshake () {
         validate()
+
+        process.nextTick(function () {
+          if (p.destroyed) return
+          self.emit('peer-add', p)
+          p.on('close', () => self.emit('peer-remove', p))
+        })
 
         function setUploading (error, info) {
           const uploading = !error

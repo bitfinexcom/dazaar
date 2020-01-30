@@ -28,6 +28,10 @@ seller.ready(function (err) {
   const buyer1 = m2.buy(seller.key)
   const buyer2 = m3.buy(seller.key)
 
+  buyer1.on('peer-add', function () {
+    buyer1.broadcast('test', 'peer-add')
+  })
+
   buyer1.receive('test', function (message) {
     console.log('buyer 1 got test message', message)
   })

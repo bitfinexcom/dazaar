@@ -22,6 +22,14 @@ const seller = m.sell(feed, {
   }
 })
 
+seller.on('peer-add', function (p) {
+  console.log('added peer')
+})
+
+seller.on('peer-remove', function (p) {
+  console.log('removed peer')
+})
+
 seller.ready(function (err) {
   if (err) throw err // Do proper error handling
   console.log('seller key pair fully loaded ...')

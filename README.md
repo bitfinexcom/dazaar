@@ -157,6 +157,14 @@ Use `stream.remotePublicKey` to get the remotes buyer key out.
 Destroy the seller instance. Closes the attached Hypercore and any open replication streams.
 Will unannounce from any attached swarm as well.
 
+#### `seller.on('peer-add', stream)`
+
+Emitted when a remote peer is authenticated and has been connected.
+
+#### `seller.on('peer-remove', stream)`
+
+Emitted when a remote peer has disconnected.
+
 #### `const buyer = market.buy(sellerKey)`
 
 Buy a hypercore by creating a buyer instance.
@@ -227,6 +235,14 @@ Use `stream.remotePublicKey` to get the remotes buyer key out.
 
 Destroy the buyer instance. Closes the attached Hypercore and any open replication streams.
 Will unannounce from any attached swarm as well.
+
+#### `buyer.on('peer-add', stream)`
+
+Emitted when a remote peer is authenticated and has been connected.
+
+#### `buyer.on('peer-remove', stream)`
+
+Emitted when a remote peer has disconnected.
 
 #### `market.selling(callback)`
 
