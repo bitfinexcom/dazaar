@@ -165,6 +165,14 @@ class Buyer extends EventEmitter {
     for (const m of this._sendable) m.userMessage.send({ name, message })
   }
 
+  get peers () {
+    const peers = []
+    for (const { stream } of this._sendable) {
+      if (stream.remotePublicKey) peers.push(stream)
+    }
+    return peers
+  }
+
   get key () {
     return this._market.buyer
   }
@@ -217,6 +225,13 @@ class Buyer extends EventEmitter {
         const error = new Error('Not connected to seller')
         self.emit('invalid', error)
         done(error)
+      },
+      onhandshake () {
+        process.nextTick(function () {
+          if (p.destroyed) return
+          self.emit('peer-add', p)
+          p.on('close', () => self.emit('peer-remove', p))
+        })
       }
     })
 
@@ -310,11 +325,15 @@ class Seller extends EventEmitter {
   }
 
   get connectedBuyers () {
-    const buyers = []
+    return this.peers.map(stream => stream.remotePublicKey)
+  }
+
+  get peers () {
+    const peers = []
     for (const { stream } of this._sendable) {
-      if (stream.remotePublicKey) buyers.push(stream.remotePublicKey)
+      if (stream.remotePublicKey) peers.push(stream)
     }
-    return buyers
+    return peers
   }
 
   get key () {
@@ -405,6 +424,12 @@ class Seller extends EventEmitter {
       },
       onhandshake () {
         validate()
+
+        process.nextTick(function () {
+          if (p.destroyed) return
+          self.emit('peer-add', p)
+          p.on('close', () => self.emit('peer-remove', p))
+        })
 
         function setUploading (error, info) {
           const uploading = !error
