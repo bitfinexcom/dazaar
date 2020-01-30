@@ -165,6 +165,14 @@ class Buyer extends EventEmitter {
     for (const m of this._sendable) m.userMessage.send({ name, message })
   }
 
+  get peers () {
+    const peers = []
+    for (const { stream } of this._sendable) {
+      if (stream.remotePublicKey) peers.push(stream)
+    }
+    return peers
+  }
+
   get key () {
     return this._market.buyer
   }
@@ -317,11 +325,15 @@ class Seller extends EventEmitter {
   }
 
   get connectedBuyers () {
-    const buyers = []
+    return this.peers.map(stream => stream.remotePublicKey)
+  }
+
+  get peers () {
+    const peers = []
     for (const { stream } of this._sendable) {
-      if (stream.remotePublicKey) buyers.push(stream.remotePublicKey)
+      if (stream.remotePublicKey) peers.push(stream)
     }
-    return buyers
+    return peers
   }
 
   get key () {

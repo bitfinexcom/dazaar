@@ -29,6 +29,7 @@ seller.ready(function (err) {
   const buyer2 = m3.buy(seller.key)
 
   buyer1.on('peer-add', function () {
+    console.log('connected to ' + buyer1.peers.length + ' peer(s)')
     buyer1.broadcast('test', 'peer-add')
   })
 

@@ -165,6 +165,10 @@ Emitted when a remote peer is authenticated and has been connected.
 
 Emitted when a remote peer has disconnected.
 
+#### `seller.peers`
+
+An array of all remote connected peers.
+
 #### `const buyer = market.buy(sellerKey)`
 
 Buy a hypercore by creating a buyer instance.
@@ -243,6 +247,10 @@ Emitted when a remote peer is authenticated and has been connected.
 #### `buyer.on('peer-remove', stream)`
 
 Emitted when a remote peer has disconnected.
+
+#### `buyer.peers`
+
+An array of all remote connected peers.
 
 #### `market.selling(callback)`
 
