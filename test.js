@@ -106,16 +106,20 @@ seller.ready(function (err) {
     console.log('replication ended', err)
   })
 
-  const options = payer.value(sellCard, 20)
+  // amount of time desired
+  const time = 5
+  const options = payer.value(sellCard, time)
   const chosen = options[0]
 
-  payer.buy(sellCard, chosen.amount, chosen.provider, buyOpts.eos, () => {setTimeout(testPayment(20), 3000)})
+  payer.buy(sellCard, chosen.amount, chosen.provider, buyOpts.eos, () => { setTimeout(testPayment(time), 2000) })
 })
 
 function testPayment (expiry) {
   return () => test(`test ${expiry} second payment`, t => {
+    console.log('ok')
     receiver.validate(buyer.key, function (err, info) {
-      if (!err) {
+      if (err) console.error(err)
+      else {
         t.equal(err, null)
         t.ok(info.remaining <= expiry * 1000)
         t.ok(info.remaining > 0)
@@ -123,7 +127,7 @@ function testPayment (expiry) {
         setTimeout(() => receiver.validate(buyer.key, function (err, info) {
           t.assert(err && err.message === 'No time left on subscription')
           t.end()
-        }), expiry * 1000)
+        }), expiry * 1000 + 5000)
       }
     })
   })
