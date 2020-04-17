@@ -29,7 +29,7 @@ seller.ready(function () {
     ]
   }
 
-  payment = new Payment(seller.key, card.payment)
+  payment = new Payment(seller, card.payment)
 
   console.log('Selling! Dazaar card:')
   console.log(JSON.stringify(card, null, 2))
