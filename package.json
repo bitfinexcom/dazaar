@@ -4,7 +4,7 @@
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
   "dependencies": {
-    "dazaar-payment": "github:hyperdivision/dazaar-payment",
+    "dazaar-payment": "github:bitfinexcom/dazaar-payment",
     "dazaar-scatter-pay": "github:bitfinexcom/dazaar-scatter-pay",
     "derive-key": "^1.0.0",
     "fd-lock": "^1.0.2",
