@@ -237,6 +237,12 @@ class Buyer extends EventEmitter {
 
     registerUserMessage(this, p)
 
+    p.registerExtension('dazaar/seller-id', {
+      onmessage (sellerId) {
+        p.emit('seller-id', sellerId)
+      }
+    })
+
     p.registerExtension('dazaar/one-time-feed', {
       onmessage (uniqueFeed) {
         const feed = self._setFeed(uniqueFeed)
@@ -289,6 +295,7 @@ class Seller extends EventEmitter {
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
     this.info = null
+    this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
 
     this._db = db
@@ -486,7 +493,9 @@ class Seller extends EventEmitter {
     const oneTimeFeed = p.registerExtension('dazaar/one-time-feed')
     const valid = p.registerExtension('dazaar/valid', { encoding: 'json' })
     const invalid = p.registerExtension('dazaar/invalid', { encoding: 'json' })
+    const id = p.registerExtension('dazaar/seller-id')
 
+    id.send(this.sellerId)
     registerUserMessage(this, p)
 
     p.on('close', function () {
