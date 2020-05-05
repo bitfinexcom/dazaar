@@ -9,9 +9,12 @@ function swarm (m, onjoin, opts) {
   if (m.destroyed) throw new Error('Seller or buyer destroyed')
   const swarm = network(opts)
 
-  swarm.on('connection', function (socket) {
+  swarm.on('connection', function (socket, info) {
     if (m.destroyed) return socket.destroy(new Error('Seller or buyer destroyed'))
     const stream = m.replicate()
+    stream.on('seller-id', function (sid) {
+      info.deduplicate(sid, sid)
+    })
     if (opts.onerror) stream.on('error', opts.onerror)
     pump(socket, stream, socket)
   })
