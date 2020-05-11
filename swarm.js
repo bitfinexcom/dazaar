@@ -13,7 +13,7 @@ function swarm (m, onjoin, opts) {
     if (m.destroyed) return socket.destroy(new Error('Seller or buyer destroyed'))
     const stream = m.replicate()
     stream.on('seller-id', function (sid) {
-      info.deduplicate(sid, sid)
+      info.deduplicate(sid)
     })
     if (opts.onerror) stream.on('error', opts.onerror)
     pump(socket, stream, socket)
