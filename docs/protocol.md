@@ -246,7 +246,7 @@ When a buyer needs to be revoked from further replicating the Hypercore,
 eg. in case of expired proof of payment or violation of the terms of service,
 some additional tweaks are needed to the standard Hypercore protocol.
 
-As decribed earlier, Hypercores do not have a per user revocation scheme built
+As described earlier, Hypercores do not have a per user revocation scheme built
 in. If a Hypercore is shared with peers A and B, there is nothing stopping
 peer A from continue to share it with B, even if the author has stopped sharing
 with B.
@@ -270,7 +270,7 @@ beginning of this paper
 
 To re-key a Hypercore like this, we simply generate a new key pair and re-sign
 the Merkle Tree root at `3`. In the worst case there will only ever be
-`log2(count(data))` Merkle Tree roots, making this operation efficent. We don't
+`log2(count(data))` Merkle Tree roots, making this operation efficient. We don't
 need to store any of these signatures on disk as they can simply be generated on
 demand when a peer requests a new signature for an updated Merkle tree. This
 means that a re-keyed Hypercore requires zero additional storage except that we
@@ -313,10 +313,10 @@ signatures from A for the corresponding Merkle Tree root.
 To revoke access to a re-keyed Hypercore a seller should simply stop sharing the
 re-keyed Hypercore. In addition to avoid the revoked buyer re-sharing the re-
 keyed Hypercore, it can choose to make public the key pair used to sign the
-Merkle Tree. By publisizing it, the key pair can no longer be trusted to only
+Merkle Tree. By publicising it, the key pair can no longer be trusted to only
 have been used by the seller, making it non trust worthy. In this case the buyer
 can still re-share the data, but would have to sign it with a key pair the buyer
-generates by themself, invalidating that the data actually came from the seller.
+generates by themselves, invalidating that the data actually came from the seller.
 
 ## Discovery
 
@@ -328,7 +328,7 @@ traffic on. However two peers seldomly know others addresses up front.
 Instead, usually, a key or topic is shared instead describing a group of peers
 in the P2P system. In systems like BitTorrent, this key is called the info hash,
 or magnet link and in Hypercore we call this key the "Hypercore Discovery Key",
-but it tends to just be some preshared information that allow peers, without
+but it tends to just be some pre-shared information that allow peers, without
 trusting eachother, to get an idea of wheather they are interested in the same
 data.
 
@@ -341,9 +341,9 @@ Therefore P2P systems tend to use a different systems.
 
 In Dazaar we used a discovery system called a Distributed Hash Table or DHT for
 short. A DHT is a data structure that efficiently allows peers to share
-key->value data withother by having each peer store a tiny portion of the
+key->value data with other by having each peer store a tiny portion of the
 overall data, whilst using a routing mechanism that allows you to find which
-peer is sharing what data without having to talk to many differnent peers
+peer is sharing what data without having to talk to many different peers
 (usually only `log(n)` peers).
 
 Dazaar uses a DHT based on Kademlia paper,
@@ -361,10 +361,10 @@ punching.
 
 UDP hole punching is a mechanism where two peers behind a firewall can use a
 third peer that they both can connect to through their firewall, to exchange a
-series of messages that allow them to connect directly to eachother.
+series of messages that allow them to connect directly to each other.
 
 Without UDP hole punching the chances of a P2P connection succeding on home
-network are usually low, as most routers today reject incoming inconnections.
+network are usually low, as most routers today reject incoming connections.
 UDP hole punching by it self is also not guaranteed to make connectivity work
 but it greatly increases the chances.
 
@@ -453,8 +453,8 @@ a recent payment to S.
 
 If so, S generates a re-keyed Hypercore, HC', from HC and forwards the Hypercore
 key of HC' to B. If B has previously contacted S, then it should not make a new
-re-keyed Hypercore but instead re-use the keypair from the previous interaction,
-so that B does not have to redownload the full data set again.
+re-keyed Hypercore but instead re-use the key pair from the previous interaction,
+so that B does not have to re-download the full data set again.
 
 It sends back the key of HC' using by sending the following Protocol Buffers
 schema
@@ -471,7 +471,7 @@ Receipt message to contain the reason why it rejected it.
 
 After sending the Receipt message, the rest of the encrypted channel between S
 and B, is used to replicate the re-keyed Hypercore using the Hypercore
-replication protocol.
+replications protocol.
 
 Periodically S will verify that B's public is still in a recent transaction to S
 based on the terms. If not S should terminate the connection to B.
