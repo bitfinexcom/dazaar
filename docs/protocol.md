@@ -16,24 +16,24 @@ Each component is briefly introduced here:
 * **Storage**: Hypercore is a append-only log structure, with each entry (block)
 verified by a Merkle tree. Root nodes of the Merkle tree are signed using an
 asymmetric key pair. Due to the Merkle tree, efficient random access is possible
-and and combined with a signature the whole tree is always proven to be
+and combined with a signature the whole tree is always proven to be
 authentic from the original writer.
 * **Protocol**: Upon connection a Noise handshake is performed, where the client
 (initiator) proves their identity to the server (responder) and vice versa.
 An encrypted transport channel is then used for a series of negotiation messages
 to decide the correct data feed, offset, payment details etc.
 * **Payment Gateway**: Customer Noise keys are stored locally (or in a database)
-for resuming previous sessions. Due payment can be check against any blockchain
-or traditional payment processor, through a pluggable API. Initial support
-includes EOS and Lightning
+for resuming previous sessions. Due payment can be checked against any
+blockchain or traditional payment processor, through a pluggable API. Initial
+support includes EOS and Lightning
 
 ## In-depth Details
 
 ## Hypercore
 
 Dazaar's core primitive is the P2P append-only log data structure named
-Hypercore, https://github.com/mafintosh/hypercore, which serves as the main
-format for storing and distributing data.
+Hypercore, https://github.com/hypercore-protocol/hypercore, which serves as
+the main format for storing and distributing data.
 
 Hypercore is similar to a single-writer ledger, which does not need any
 proof of work, stake or authority, since only the creator of the ledger is able
@@ -116,46 +116,49 @@ https://github.com/datprotocol/whitepaper/blob/master/dat-paper.pdf
 
 ## Distribution and access control
 
-As mentioned above Hypercores are a peer to peer datastructure, meaning that
-each person downloading a Hypercore can redistribute the data to other peers.
+Sincre Hypercores are an append-only, tamper-proof data structure, any peer
+can relay data to other peers, without talking to the original author.
 
-This is one of the hallmarks of P2P technology as it can massively help scale
-data distribution without having a big centralised server take on the cost of
-meeting the demand of who wants to get the data.
+This is one of the hallmarks of P2P technology as it lowers load and bandwidth
+requirements for a data producer, by sharing load across the network of peers.
+This allows for much greater scale in the number of consuming peers (readers).
 
-However, the distributed feature also requires us to think more about what and
-how we implement access control systems in a P2P world. In this context, what we
-mean by access control systems, is ways of controlling who can access data we
-publish and ways to revoke access if a condition we set up as an access
-requirement is no longer met.
+However, the distributed nature also requires a different techniques for
+implementing access control systems in a P2P system. In this context, what
+access control means, is methods for controlling who can access data as it is
+written and methods to revoke future access if a condition is no longer met.
 
-Per default Hypercores ship with a very basic access control system, a
-capability system. This capability system ensures using cryptographic primitives
-that only peers that have received the public key of a Hypercore using some out
-of band secure communication are able to replicate data from other peers in the
-network.
+Per default Hypercores ship with a very basic access control system, called a
+capability system. This capability system ensures, using cryptographic
+primitives, that only peers that know the public key of a Hypercore are able to
+replicate data from other peers in the network. The key can be distributed by
+any means necessary.
 
-This establishes a flow where you, a data author, can create a new Hypercore,
+This establishes a flow where the data author, can create a new Hypercore,
 and using a secure channel, for example the Signal messaging app, can share the
-Hypercore public key with a friend. If you and your friend now establish a P2P
-network connection between each other the capability system built into Hypercore
-ensures that no man in the middle will be able to decrypt the data shared in the
-Hypercore itself.
+Hypercore public key with another consumer. The author and the consumer can now
+establish a P2P network connection between each other, and the capability system
+built into Hypercore ensures that no eavesdropper will be able to decrypt the
+data shared in the Hypercore itself, or find peers interested in the Hypercore,
+unless they have knowledge of the public key.
 
 This basic access control system is however quite limited. It has the power of
-simplicity, since it has very little UX overhead for each party in a Hypercore
-network, but lacks features such as revokation. If we had shared our Hypercore
-with two different friends and now wanted to revoke one of them we would have to
-stop sharing with both and create a new one - not optimal.
+simplicity, since it is simply sharing a Hypercore key, akin to a URL, but lacks
+features such as revocation. If the Hypercore had been shared
+with two different consumers and later one should be revoked, a new Hypercore
+would have to be created and shared with all peers that should continue have
+access. This is not just cumbersome, but also leads to security difficulties,
+such as whether the original producer and the new one are in fact the same
+trusted author.
 
-Obviously for something like a distributed market place where we want to able to
-sell a subscription to a data feed, and revoke access to the same data feed if a
-customer is no longer paying for it we needed a better solution.
+For something like a distributed market place where revocation is continuous,
+perhaps due to lack of payment, and where there are many consumers, a better
+solution is needed.
 
 ## Revokable Data Subscriptions
 
-To support revokable data subscriptions on top of Hypercore we need to support
-the two phases of a subscription; purchase and access.
+To support revokable data subscriptions on top of Hypercores, the system needs
+to support the two phases of a subscription; purchase and access.
 
 1. During the purchase phase, the buyer connects to the seller using a mutually
 authenticating handshake over an encrypted channel, first providing the public
@@ -163,7 +166,7 @@ key they want to bind the subscription to and then a proof of purchase. This
 proof of purchase must be publicly verifiable for the seller, who upon
 successful validation, will proceed to share data. This verification could for
 example be querying a blockchain. A seller may choose to make purchases a
-one-time fee or an ongoing fee based on, for example, time.
+one-time fee or an ongoing fee based on, for example, time or data usage.
 2. During the access phase, the buyer connects to the seller using the key pair
 for which they provided the public key during the registration, which the seller
 then verifies for having an active subscription. An inactive subscription
@@ -179,43 +182,32 @@ the seller can choose to close the connection in case of insufficient payment,
 to cut off access for the buyer. In addition the guarantees Hypercore provides
 reassures the buyer that they are talking to the right seller.
 
-## 1. Fully authenticated connections
+Note that due to the nature of data access, data that has already been seen by
+the buyer cannot be revoked, however future access to fresh data or further
+historical data can be restricted.
 
-To establish fully authenticated connections between a buyer and seller dazaar
-uses the Noise protocol framework. For those unfamiliar with Noise it is like a
-highly modular and modern set of cryptography patters, based on Diffie-Hellman
-key exhange that allows you build encrypted tunnels between users satisfying
-exactly the requirements you need.
+## Fully authenticated connections
 
-Establishing secure handshakes is a highly complex operation and has been the
-subject of many years of research and many scientific papers.
+To establish fully authenticated connections between a buyer and seller Dazaar
+uses the Noise protocol framework. Noise is a state of the art cryptographic
+framework for composing handshakes as part of initiation of a secure channel.
+It avoids many of the pitfalls and constraints of protocols such as TLS, making
+it more flexible, and hence ideal in a P2P scenario.
 
-From an implementors point of view, Noise is good to work with due to the fact
-that the way the peers are validated is highly pluggable. For example if we were
-to look at something like SSL for a second, that is very much configured out of
-the box to work with a classic client-server model, like we have in a web
-browser. An unauthenticated client connects to an untrusted server, they
-exchange some messages and at some point after a Diffie-Hellman exchange has
-happened the client needs to validate that the server is indeed the server it
-was looking for and not some scammer in the middle. The way that is done here is
-by checking that the servers keys are signed by a trusted third party, the SSL
-certificate issuer. This is a fine model for the web, but hard to fit in a peer
-to peer scenario where we don't really have trusted third parties in the same
-way we do in a web browser.
+For Dazaar, the authentication model using Noise works like this:
 
-For our market place our authentication model using Noise works like this:
-
-1. A data seller is identified by a cryptographic public key (S). This public
+A data seller is identified by a cryptographic public key (S). This public
 key is pre-shared with potential data buyers through some secure medium, such as
 posting in on a personal website or sending it through a secure messaging app
 such as Signal. The corresponding secret key is known only to the data seller
-and kept secure and private. 2. A data buyer is also identified by a
-cryptographic public (B) but this key is not pre-shared with the data seller.
+and kept secure and private.
+
+A data buyer is also identified by a cryptographic public (B) but this key is
+not pre-shared with the data seller.
 
 To purchase a data subscription the buyer provides payment using a payment
-method the seller has pre-shared. For example if they were to pay using a crypto
-currency they'd include their public key (S) in the transaction comment that is
-submitted to the corresponding block chain.
+method the seller has pre-shared. This could be a Lightning invoice, a unique
+deposit address or a memo field in the transaction details.
 
 The buyer then connects to the seller. To find each other they use a distributed
 discovery service (described below in the Discovery section). The seller
@@ -223,45 +215,41 @@ announces their IP address under their public key (B) which the buyer uses to
 find the seller and the two peers establish a network connection between each
 other.
 
-To establish the fully authenticated and encrypted connection the peers now use
-the Noise protocol framework using the XK pattern. The XK pattern is used when
-we have a preshared public for one of the peers, in our case the seller (S). The
-Noise protocol then takes care of doing a Diffie-Hellman exchange, and at some
-point in the handshake it requires the seller to validate other persons public
-key, in our case the buyer (B). To validate the buyers public key, the seller
-should verifiy that this public key (B), indeed is written in a block chain
-transaction, paying for the data subscription or using whatever prenegotiated
-way of payment. If this public is indeed used in a valid and current transaction
-the seller will accept this public key and the two peers now have a fully
-encrypted and authenticated channel between each other. Note that it is not
-possible for a third party to fake having the buyers public key (B) as the Noise
-handshake makes sure using Diffie-Hellman that the buyer has the corresponding
-private key as well.
+To establish the fully authenticated and encrypted connection
+the Noise protocol framework XX pattern is used.
+The XX pattern first handshakes using ephemeral key pairs, which makes the
+session unique and provides forward secrecy. An eavesdropper will not be able
+to identify the two parties based on the data sent here alone. After ephemeral
+keys have been shared, the connection is "upgraded" by sharing the static keys,
+eg. S for seller and B for buyer. Either party can then verify the public keys
+of the other. Here the seller will verify that the public key send by the buyer
+B, is authorised to connect. If the buyer is not authorised, Dazaar will send
+an appropriate error message to the buyer with the reason. Note even if one of
+the two parties sent public keys they did not posses the corresponding private
+key of, they will not be able to read any messages, due to the nature of Noise,
+through the Diffie-Hellman key exchange algorithm.
 
 Periodically the seller should revalidate that the buyers public key is present
 in an up-to-date transaction and if that is no longer the case revoke the data
 stream and disconnect from the buyer.
 
-We should note that to revoke a key pair used by a buyer to connect to a seller,
+Note that to revoke a key pair used by a buyer to connect to a seller,
 one should simply stop providing a payment proof for this key pair. It should
 also be noted that it is the sellers responsibility to ensure that it is not
-connected to multiple buyers using the same key pair.
+connected to multiple buyers using the same key pair. However the protocol
+ensures that each buyer will be assigned a unique hypercore as described in the
+next section.
 
-## 2. Revokable Hypercores
+## Revokable Hypercores
 
-Using the scheme described above we can bootstrap a network, where the
-authentication layer for each encrypted connection is based on a "proof of
-payment" instead of a federated certification chain like in SSL.
+When a buyer needs to be revoked from further replicating the Hypercore,
+eg. in case of expired proof of payment or violation of the terms of service,
+some additional tweaks are needed to the standard Hypercore protocol.
 
-In the situation where we want to revoke access to the data stored in the
-Hypercore, for example in case the proof of payment has expired, or if the buyer
-has broken usage terms that the seller has provided, we need to some additional
-tweaks.
-
-If we recall from earlier in this document, Hypercores by themself do not have a
-per user revocation scheme build in. If you share a Hypercore with peers A and
-B, there is nothing stopping peer A from continue to share it with B, if you cut
-off access to peer B.
+As decribed earlier, Hypercores do not have a per user revocation scheme built
+in. If a Hypercore is shared with peers A and B, there is nothing stopping
+peer A from continue to share it with B, even if the author has stopped sharing
+with B.
 
 For a market place we obviously want better mechanics for this. To provide this
 we introduce a concept of "re-keyed" Hypercores. A re-keyed Hypercore is a
