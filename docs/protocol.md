@@ -1,25 +1,31 @@
-# The Dazaar Protocol
+# Dazaar
 
 This document describes how Dazaar (https://dazaar.com) works in detail. Dazaar
-is a protocol and marketplace for sharing, selling, and buying various data sets
+is a network and marketplace for sharing, selling, and buying various data sets
 through a peer to peer network. Dazaar is agnostic to the payment method,
 supporting any blockchain or fiat payment processor. Dazaar supports any data
 format that can be represented using an append-only log data structure.
 
 ## High-level Overview
 
-Dazaar can be seen as 3 interacting components; verifiable, random-access
-storage, an encrypted communications protocol and a pluggable payment gateway.
+Dazaar works as a protocol extension to the Hypercore Protocol,
+https://hypercore-protocol.org.
+
+It can be seen as 3 interacting components; verifiable, random-access
+storage, an encrypted communications protocol and a pluggable payment gateway,
+where the first two are provided by the Hypercore protocol and the latter
+by the Dazaar extension.
 
 Each component is briefly introduced here:
 
-* **Storage**: Hypercore is a append-only log structure, with each entry (block)
-verified by a Merkle tree. Root nodes of the Merkle tree are signed using an
-asymmetric key pair. Due to the Merkle tree, efficient random access is possible
-and combined with a signature the whole tree is always proven to be
-authentic from the original writer.
-* **Protocol**: Upon connection a Noise handshake is performed, where the client
-(initiator) proves their identity to the server (responder) and vice versa.
+* **Storage**: Hypercore (https://hypercore-protocol.org) is a append-only log
+structure, with each entry (block) verified by a Merkle tree. Root nodes of the
+Merkle tree are signed using an asymmetric key pair. Due to the Merkle tree,
+efficient random access is possible and combined with a signature the whole
+tree is always proven to be authentic from the original writer.
+* **Protocol**: When Hypercore communicates over the wire it performs a
+Noise handshake, where the client (initiator) proves their identity to the server
+(responder) and vice versa.
 An encrypted transport channel is then used for a series of negotiation messages
 to decide the correct data feed, offset, payment details etc.
 * **Payment Gateway**: Customer Noise keys are stored locally (or in a database)
@@ -29,9 +35,9 @@ support includes EOS and Lightning
 
 ## In-depth Details
 
-## Hypercore
+## Storage
 
-Dazaar's core primitive is the P2P append-only log data structure named
+Dazaar's core primitive is a distributed append-only log data structure named
 Hypercore, https://github.com/hypercore-protocol/hypercore, which serves as
 the main format for storing and distributing data.
 
@@ -106,17 +112,17 @@ implemented on top, which opens for much more rich applications.
 
 Examples include:
 
-* Random access key-value store: https://github.com/mafintosh/hypertrie
-* Multi-writer key-value store: https://github.com/mafintosh/hyperdb
-* Distributed file system: https://github.com/mafintosh/hyperdrive
+* Random access key-value store: https://github.com/hypercore-protocol/hypertrie
+* Distributed file system: https://github.com/hypercore-protocol/hyperdrive
 
-Hypercores are also used as the foundation of the Dat protocol, and further
+Hypercores also served as the foundation of the Dat protocol, and further
 technical details can be found in the Dat white paper:
-https://github.com/datprotocol/whitepaper/blob/master/dat-paper.pdf
+https://github.com/datprotocol/whitepaper/blob/master/dat-paper.pdf and
+on the Hypercore protocol website, https://hypercore-protocol.org
 
 ## Distribution and access control
 
-Sincre Hypercores are an append-only, tamper-proof data structure, any peer
+Since Hypercores are an append-only, tamper-proof data structure, any peer
 can relay data to other peers, without talking to the original author.
 
 This is one of the hallmarks of P2P technology as it lowers load and bandwidth
@@ -186,45 +192,58 @@ Note that due to the nature of data access, data that has already been seen by
 the buyer cannot be revoked, however future access to fresh data or further
 historical data can be restricted.
 
+## Protocol extensions
+
+To implement more custom behaivor on top of the existing append-only log data
+exchange Hypercore provides an extension protocol where third parties can add
+their own message types to Hypercore's wire protocol.
+
+Dazaar utilises this extension protocol to add its market place mechanics and
+content payment facilitation. More precisely it uses the following extension
+messages:
+
+#### `dazaar/one-time-feed`
+
+A 32 byte binary message with the feed key of the feed the buyer is buying.
+The seller sends this message it has deemed the buyer valid and generated a feed
+for the buyer.
+
+#### `dazaar/valid`
+
+The seller can choose to send this JSON message to the buyer to indicate how
+much time/bandwidth the buyer has left. Should only be send when the seller
+has validated the buyers payment as valid and can be sent peridocially.
+
+#### `dazaar/invalid`
+
+Similarly to the `valid` message, the invalid one can be sent when the buyer
+runs out of bandwidth/time to inform the buyer why the seller is no longer
+uploading data to the buyer.
+
 ## Fully authenticated connections
 
-To establish fully authenticated connections between a buyer and seller Dazaar
-uses the Noise protocol framework. Noise is a state of the art cryptographic
-framework for composing handshakes as part of initiation of a secure channel.
+When Hypercore peers connect to eachother to exchange their append-only log data
+they do so by establishing a fully authenticated connection between the peers.
+To facilitate the secure connection Hypercore uses the Noise protocol framework.
+Noise is a state of the art cryptographic framework for composing handshakes as
+part of initiation of a secure channel.
 It avoids many of the pitfalls and constraints of protocols such as TLS, making
 it more flexible, and hence ideal in a P2P scenario.
 
-For Dazaar, the authentication model using Noise works like this:
-
-A data seller is identified by a cryptographic public key (S). This public
-key is pre-shared with potential data buyers through some secure medium, such as
-posting in on a personal website or sending it through a secure messaging app
-such as Signal. The corresponding secret key is known only to the data seller
-and kept secure and private.
-
-A data buyer is also identified by a cryptographic public (B) but this key is
-not pre-shared with the data seller.
-
-To purchase a data subscription the buyer provides payment using a payment
-method the seller has pre-shared. This could be a Lightning invoice, a unique
-deposit address or a memo field in the transaction details.
-
-The buyer then connects to the seller. To find each other they use a distributed
-discovery service (described below in the Discovery section). The seller
-announces their IP address under their public key (B) which the buyer uses to
-find the seller and the two peers establish a network connection between each
-other.
-
-To establish the fully authenticated and encrypted connection
-the Noise protocol framework XX pattern is used.
+To establish the fully authenticated and encrypted connection the Noise protocol
+framework XX pattern is used.
 The XX pattern first handshakes using ephemeral key pairs, which makes the
 session unique and provides forward secrecy. An eavesdropper will not be able
 to identify the two parties based on the data sent here alone. After ephemeral
 keys have been shared, the connection is "upgraded" by sharing the static keys,
-eg. S for seller and B for buyer. Either party can then verify the public keys
-of the other. Here the seller will verify that the public key send by the buyer
-B, is authorised to connect. If the buyer is not authorised, Dazaar will send
-an appropriate error message to the buyer with the reason. Note even if one of
+of each peer.
+
+Dazaar utilises these static keys to authenticate both the buying peer (B) and
+selling peer (S).
+
+Here the seller will verify that the public key send by the buyer B, is
+authorised to connect. If the buyer is not authorised, Dazaar will send an
+appropriate error message to the buyer with the reason. Note even if one of
 the two parties sent public keys they did not posses the corresponding private
 key of, they will not be able to read any messages, due to the nature of Noise,
 through the Diffie-Hellman key exchange algorithm.
@@ -318,74 +337,33 @@ have been used by the seller, making it non trust worthy. In this case the buyer
 can still re-share the data, but would have to sign it with a key pair the buyer
 generates by themselves, invalidating that the data actually came from the seller.
 
-## Discovery
+## Discovery and connectivity
 
-To bootstrap a P2P system we usually need a way for two peers to find each
-other. Since we are dealing with a networked system a peer address boils down to
-an IP where their computer is located and a TCP/UDP port they are listening for
-traffic on. However two peers seldomly know others addresses up front.
+Similarily to existing distributed networks, Dazaar buyers needs a discovery
+mechanism to find the Dazaar seller they are interested in and establish a P2P
+connection between the two.
 
-Instead, usually, a key or topic is shared instead describing a group of peers
-in the P2P system. In systems like BitTorrent, this key is called the info hash,
-or magnet link and in Hypercore we call this key the "Hypercore Discovery Key",
-but it tends to just be some pre-shared information that allow peers, without
-trusting eachother, to get an idea of wheather they are interested in the same
-data.
+Dazaar benefits from the Hyperswarm discovery network that Hypercore uses,
+https://hypercore-protocol.org/#hyperswarm.
+The Hyperswarm discovery network is a distributed Kademlia based DHT that also
+provides P2P holepunching capabilities, making it possible to run Dazaar peers
+from home without having to configure firewalls and networks in most cases.
 
-In a centralised system, the way we normally map from a key -> IP:port is by
-purchasing a DNS record for the key and publishing the IP to a series of DNS
-servers. This method does not scale particulary well to P2P systems, DNS servers
-are built for much more permanent addresses than peers in a P2P system has.
+Normally when Hypercore peers discover each other on the Hyperswarm network they
+do so by using a known identifier describing their Hypercore, similar to how
+BitTorrent peers discovery each using their torrent "info hash".
+In Hypercore this key is called the "Hypercore Discovery Key" which is a hash
+of the Hypercore's public key.
 
-Therefore P2P systems tend to use a different systems.
+Since Dazaar relies on buyers finding the seller of a dataset it uses a slightly
+different model.
 
-In Dazaar we used a discovery system called a Distributed Hash Table or DHT for
-short. A DHT is a data structure that efficiently allows peers to share
-key->value data with other by having each peer store a tiny portion of the
-overall data, whilst using a routing mechanism that allows you to find which
-peer is sharing what data without having to talk to many different peers
-(usually only `log(n)` peers).
-
-Dazaar uses a DHT based on Kademlia paper,
-https://pdos.csail.mit.edu/~petar/papers/maymounkov-kademlia-lncs.pdf called the
-HyperSwarm DHT, https://github.com/hyperswarm/dht
-
-Additionaly to support offline discovery multicast DNS is used on the local
-network a peer is connected to, to find other peers in our topic.
-
-## Hole punching and P2P connectivity
-
-One of the main features of the HyperSwarm DHT is that it solves another hard
-problem in regards to P2P discovery and connectivity, something called UDP hole
-punching.
-
-UDP hole punching is a mechanism where two peers behind a firewall can use a
-third peer that they both can connect to through their firewall, to exchange a
-series of messages that allow them to connect directly to each other.
-
-Without UDP hole punching the chances of a P2P connection succeding on home
-network are usually low, as most routers today reject incoming connections.
-UDP hole punching by it self is also not guaranteed to make connectivity work
-but it greatly increases the chances.
-
-Normally hole punching is done through a central pre-shared server. For example
-this is how WebRTC in a WebBrowser does hole punching, in many cases using
-Google's free central hole puncher.
-
-In the HyperSwarm DHT we use DHT peers instead of relying on a central hole
-puncher.
-
-Although more complex than using a central server, this has a couple of
-advantages.
-
-* It is less reliant on centralised peers.
-* Less metadata is leaked to a third party (i.e. who is connecting to who).
-* Having hole punching built in to a DHT means more peers can join the DHT.
-
-If peer A wants to connect to peer B, then the DHT peer, C, storing the
-information about B's IP and port will be able to act as a hole punching peer.
-This follows because B was able to access C to store its IP and port and A want
-able to access C because it was able to retrieve the IP and port from C as well.
+Only selling peers announce themself to the network. As their discovery topic
+they use their 32 byte Noise public key instead of the "Discovery key". This
+makes it easier for buyers to quickly find the seller they are looking for.
+Since Hypercore does the full Noise XX handshake and Dazaar verfifies that the
+seller's static key was indeed the one the buyer was trying to connect to, bad
+peers will be automatically rejected if they announce to the sellers topic.
 
 ## Dazaar Card
 
@@ -456,25 +434,18 @@ key of HC' to B. If B has previously contacted S, then it should not make a new
 re-keyed Hypercore but instead re-use the key pair from the previous interaction,
 so that B does not have to re-download the full data set again.
 
-It sends back the key of HC' using by sending the following Protocol Buffers
-schema
+It sends back the key of HC' using `dazaar/one-time-feed` extension message described
+above.
 
-```proto
-message Receipt {
-  optional bytes reKeyedFeed = 1;
-  optional string invalid = 2;
-}
-```
+In case it rejects B's public key, it can send the `dazaar/invalid` message with
+a JSON object containing the reason why it rejected it.
 
-In case it rejects B's public key, it can set the `invalid` string in the
-Receipt message to contain the reason why it rejected it.
-
-After sending the Receipt message, the rest of the encrypted channel between S
-and B, is used to replicate the re-keyed Hypercore using the Hypercore
-replications protocol.
+After sending the `one-time-feed` message, the existing Hypercore replication
+stream is used to replicate the re-keyed Hypercore.
 
 Periodically S will verify that B's public is still in a recent transaction to S
-based on the terms. If not S should terminate the connection to B.
+based on the terms. If not S can either send an `dazaar/invalid` message or
+terminate the connection to B.
 
 ## Conclusion
 
