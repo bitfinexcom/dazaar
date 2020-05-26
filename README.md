@@ -109,19 +109,35 @@ Call `cb` when the `seller` object is fully initialised, optionally with an
 `error`. Similar to the event, but will call immediately if the event has
 already fired.
 
-#### `seller.on('validate', remoteKey)`
+#### `seller.on('buyer-validate', remoteKey)`
 
 Event when the seller receives a `remoteKey`, but before the the `validate`
 function is called. `remoteKey` a Buffer, and the same reference passed to
 `validate`.
 
-#### `seller.on('valid', remoteKey, info)`
+#### `seller.on('buyer-valid', remoteKey, info)`
 
 Emitted every time we succesfully validate a buyer.
 
-#### `seller.on('invalid', remoteKey, error)`
+#### `seller.on('buyer-invalid', remoteKey, error)`
 
 Emitted when we invalidate a remote buyer.
+
+#### `seller.on('valid', info, stream)`
+
+Emitted when a remote buyer validates the seller.
+Note that this is only relevant if the seller does buyer validation.
+
+The stream is the replication stream associated with the session.
+See `stream.remotePublicKey` to get the public key of the buyer.
+
+#### `seller.on('invalid', info, stream)`
+
+Emitted when a remote buyer invalidates the seller.
+Note that this is only relevant if the seller does buyer validation.
+
+The stream is the replication stream associated with the session.
+See `stream.remotePublicKey` to get the public key of the buyer.
 
 #### `seller.discoveryKey`
 
@@ -172,11 +188,27 @@ Emitted when a remote peer has disconnected.
 
 An array of all remote connected peers.
 
-#### `const buyer = market.buy(sellerKey)`
+#### `const buyer = market.buy(sellerKey, [options])`
 
 Buy a hypercore by creating a buyer instance.
 It is expected that the remote seller can verify that you purchased
-the data through a third party some how
+the data through a third party some how.
+
+Options include:
+
+``` js
+{
+  // Set this to true if you do not want to download all data but only
+  // the data you as for
+  sparse: false
+  // In case you want to optionally validate the seller before downloading
+  // any data you can pass in a validate function similar to above as well.
+  validate (remoteKey, cb) {},
+  // How often to call the above validate function in milliseconds.
+  // Default is 1000ms
+  validateInterval: 1000
+}
+```
 
 #### `buyer.on('ready')`
 
@@ -204,17 +236,31 @@ Emitted when we have a feed.
 If we previously successfully validated, this is triggered right away.
 Otherwise it is triggered after the first remote validation.
 
-#### `buyer.on('validate')`
+#### `buyer.on('validated')`
 
 Emitted first time a remote seller validates us.
 
-#### `buyer.on('valid', info)`
+#### `buyer.on('valid', info, stream)`
 
 Emitted everytime the remote seller sends us some updated info about our valid subscription.
 
-#### `buyer.on('invalidate', err)`
+#### `buyer.on('invalid', err, stream)`
 
 Emitted when a remote seller invalidates us with the error they provided.
+
+#### `buyer.on('seller-validate', remoteKey)`
+
+Event when the buyer receives a `remoteKey`, but before the the `validate`
+function is called. `remoteKey` a Buffer, and the same reference passed to
+`validate`. Only emitted if you pass in a `validate` function in the constructor.
+
+#### `buyer.on('seller-valid', remoteKey, info)`
+
+Emitted every time we succesfully validate a buyer.
+
+#### `buyer.on('seller-invalid', remoteKey, error)`
+
+Emitted when we invalidate a remote buyer.
 
 #### `buyer.feed`
 
