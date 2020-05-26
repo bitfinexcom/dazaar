@@ -85,7 +85,10 @@ Options include:
   validate (remoteKey, cb) {},
   // How often to call the above validate function in milliseconds.
   // Default is 1000ms
-  validateInterval: 1000
+  validateInterval: 1000,
+  // Set uniqueFeed to false to generate the same Hypercore feed for each
+  // buyer. Should only be used for free Hypercores (defaults to true)
+  uniqueFeed: true
 }
 ```
 

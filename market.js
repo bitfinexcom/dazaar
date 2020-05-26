@@ -292,11 +292,17 @@ class Seller extends EventEmitter {
     super()
 
     this.feed = feed
+    this.uniqueFeed = opts.uniqueFeed !== false
+    if (!this.uniqueFeed && opts.validate) throw new Error('Cannot set both uniqueFeed = false and validate')
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
     this.info = null
     this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
+
+    if (!this.uniqueFeed) {
+      this.validate = (remoteKey, done) => done(null, { free: true })
+    }
 
     this._db = db
     this._market = market
@@ -500,12 +506,20 @@ class Seller extends EventEmitter {
 
     p.on('close', function () {
       clearTimeout(timeout)
-      if (uniqueFeed) uniqueFeed.close()
+      if (uniqueFeed && uniqueFeed !== self.feed) uniqueFeed.close()
     })
 
     return p
 
     function getUniqueFeed (cb) {
+      if (!self.uniqueFeed) {
+        self.feed.ready(function (err) {
+          if (err) return cb(err)
+          cb(null, self.feed)
+        })
+        return
+      }
+
       if (uniqueFeed) return cb(null, uniqueFeed)
       getUniqueKeyPair(function (err, keyPair) {
         if (err) return cb(err)
