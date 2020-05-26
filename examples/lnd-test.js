@@ -1,7 +1,7 @@
 const test = require('tape')
 const hypercore = require('hypercore')
-const Payment = require('../dazaar-payment')
-const dazaar = require('./')
+const Payment = require('dazaar-payment')
+const dazaar = require('../')
 const pump = require('pump')
 
 var eosOpts = { sell: {}, buy: {} }
@@ -18,13 +18,13 @@ eosOpts.buy.chainId = 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f
 
 var lnOpts = { lnd: {}, c: {} }
 
-lnOpts.lnd.lnddir = '../lightning/.lnd'
+lnOpts.lnd.lnddir = '../../lightning/.lnd'
 lnOpts.lnd.rpcPort = 'localhost:11009'
 lnOpts.lnd.address = 'localhost:9731'
 lnOpts.lnd.network = 'regtest'
 lnOpts.lnd.implementation = 'lnd'
 
-lnOpts.c.lightningdDir = '../lightning/.c'
+lnOpts.c.lightningdDir = '../../lightning/.c'
 lnOpts.c.address = 'localhost:9733'
 lnOpts.c.network = 'regtest'
 lnOpts.c.implementation = 'c-lightning'
@@ -46,7 +46,7 @@ const buyCard = {
 let receiver
 let payer
 let buyer
-let expected = []
+const expected = []
 
 const feed = hypercore('./tmp/data1')
 
@@ -77,7 +77,7 @@ seller.ready(function (err) {
 
   var sellOpts = {
     eos: eosOpts.sell,
-    lnd: lnOpts.lnd,
+    lnd: lnOpts.lnd
   }
 
   var buyOpts = {
