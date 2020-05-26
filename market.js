@@ -127,6 +127,8 @@ class Buyer extends EventEmitter {
     this.sparse = !!opts.sparse
     this.info = null
     this.destroyed = false
+    this.validate = opts.validate
+    this.revalidate = opts.validateInterval || 1000
 
     this._db = db
     this._market = market
@@ -212,6 +214,8 @@ class Buyer extends EventEmitter {
     if (this.destroyed) throw new Error('Buyer is destroyed')
 
     const self = this
+    let timeout
+    let isValid
 
     const p = new Protocol(initiator, {
       keyPair (done) {
@@ -223,7 +227,7 @@ class Buyer extends EventEmitter {
       onauthenticate (remotePublicKey, done) {
         if (remotePublicKey.equals(self.seller)) return done(null)
         const error = new Error('Not connected to seller')
-        self.emit('invalid', error)
+        self.emit('invalid', error, p)
         done(error)
       },
       onhandshake () {
@@ -246,27 +250,73 @@ class Buyer extends EventEmitter {
     p.registerExtension('dazaar/one-time-feed', {
       onmessage (uniqueFeed) {
         const feed = self._setFeed(uniqueFeed)
-        self.emit('validate', uniqueFeed)
+        self.emit('validated', uniqueFeed, p)
         feed.replicate(p, { live: true })
       }
     })
 
-    p.registerExtension('dazaar/valid', {
+    const valid = p.registerExtension('dazaar/valid', {
       encoding: 'json',
       onmessage (info) {
         self.info = info
-        self.emit('valid', info)
+        self.emit('valid', info, p)
       }
     })
 
-    p.registerExtension('dazaar/invalid', {
+    const invalid = p.registerExtension('dazaar/invalid', {
       encoding: 'json',
       onmessage (info) {
-        self.emit('invalid', new Error(info.error))
+        self.emit('invalid', new Error(info.error), p)
       }
     })
 
+    if (this.validate) {
+      if (this.feed) validate()
+      else this.once('feed', validate)
+      p.on('close', function () {
+        self.removeListener('feed', validate)
+        clearTimeout(timeout)
+      })
+    }
+
     return p
+
+    function validate () {
+      if (p.destroyed) return
+      self.feed.setDownloading(false)
+      self.emit('seller-validate', p.remotePublicKey)
+      self.validate(p.remotePublicKey, function (err, info) {
+        if (p.destroyed) return
+        setDownloading(err, info)
+      })
+    }
+
+    function setDownloading (error, info) {
+      const downloading = !error
+      if (self.feed) {
+        self.feed.setDownloading(downloading)
+      }
+
+      if (error) {
+        if (isValid !== false) {
+          isValid = false
+          invalid.send({ error: error.message })
+          self.emit('seller-invalid', p.remotePublicKey, error)
+        }
+      } else {
+        if (isValid !== true) {
+          isValid = true
+        }
+        if (info && typeof info === 'object') {
+          self.emit('seller-valid', p.remotePublicKey, info)
+          valid.send(info)
+        } else {
+          self.emit('seller-valid', p.remotePublicKey, null)
+        }
+      }
+
+      timeout = setTimeout(validate, self.revalidate)
+    }
   }
 
   _setFeed (key) {
@@ -292,11 +342,17 @@ class Seller extends EventEmitter {
     super()
 
     this.feed = feed
+    this.uniqueFeed = opts.uniqueFeed !== false
+    if (!this.uniqueFeed && opts.validate) throw new Error('Cannot set both uniqueFeed = false and validate')
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
     this.info = null
     this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
+
+    if (!this.uniqueFeed) {
+      this.validate = (remoteKey, done) => done(null, { free: true })
+    }
 
     this._db = db
     this._market = market
@@ -448,7 +504,7 @@ class Seller extends EventEmitter {
             if (isValid !== false) {
               isValid = false
               invalid.send({ error: error.message })
-              self.emit('invalid', p.remotePublicKey, error)
+              self.emit('buyer-invalid', p.remotePublicKey, error)
             }
           } else {
             if (isValid !== true) {
@@ -456,10 +512,10 @@ class Seller extends EventEmitter {
             }
             if (info && typeof info === 'object') {
               self.info = info
-              self.emit('valid', p.remotePublicKey, info)
+              self.emit('buyer-valid', p.remotePublicKey, info)
               valid.send(info)
             } else {
-              self.emit('valid', p.remotePublicKey, null)
+              self.emit('buyer-valid', p.remotePublicKey, null)
             }
           }
 
@@ -481,7 +537,7 @@ class Seller extends EventEmitter {
 
         function validate () {
           if (p.destroyed) return
-          self.emit('validate', p.remotePublicKey)
+          self.emit('buyer-validate', p.remotePublicKey)
           self.validate(p.remotePublicKey, function (err, info) {
             if (p.destroyed) return
             onvalidate(err, info)
@@ -491,21 +547,41 @@ class Seller extends EventEmitter {
     })
 
     const oneTimeFeed = p.registerExtension('dazaar/one-time-feed')
-    const valid = p.registerExtension('dazaar/valid', { encoding: 'json' })
-    const invalid = p.registerExtension('dazaar/invalid', { encoding: 'json' })
     const id = p.registerExtension('dazaar/seller-id')
+
+    const valid = p.registerExtension('dazaar/valid', {
+      encoding: 'json',
+      onmessage (info) {
+        self.emit('valid', info, p)
+      }
+    })
+
+    const invalid = p.registerExtension('dazaar/invalid', {
+      encoding: 'json',
+      onmessage (info) {
+        self.emit('invalid', info, p)
+      }
+    })
 
     id.send(this.sellerId)
     registerUserMessage(this, p)
 
     p.on('close', function () {
       clearTimeout(timeout)
-      if (uniqueFeed) uniqueFeed.close()
+      if (uniqueFeed && uniqueFeed !== self.feed) uniqueFeed.close()
     })
 
     return p
 
     function getUniqueFeed (cb) {
+      if (!self.uniqueFeed) {
+        self.feed.ready(function (err) {
+          if (err) return cb(err)
+          cb(null, self.feed)
+        })
+        return
+      }
+
       if (uniqueFeed) return cb(null, uniqueFeed)
       getUniqueKeyPair(function (err, keyPair) {
         if (err) return cb(err)
