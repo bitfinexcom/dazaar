@@ -46,6 +46,22 @@ class Market extends EventEmitter {
     return this._keyPair && this._keyPair.publicKey
   }
 
+  setConfig (key, val, cb) {
+    this._db.put('config/' + key, val, { condition: noDups }, function (err) {
+      if (cb) cb(err)
+    })
+
+    function noDups (oldNode, newNode, cb) {
+      cb(null, !oldNode || (JSON.stringify(oldNode.value) !== JSON.stringify(newNode.value)))
+    }
+  }
+
+  getConfig (key, cb) {
+    this._db.get('config/' + key, function (err, node) {
+      cb(err, node ? node.value : null)
+    })
+  }
+
   _ready (cb) {
     const self = this
 
