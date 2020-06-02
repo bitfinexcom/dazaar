@@ -384,7 +384,7 @@ A Dazaard card looks like this:
   "provider": "Jane Doe",
   "sellerKey": "dead...beef",
   "payment": [{
-    "method": "lnd",
+    "method": "ln",
     "currency": "LightningSats",
     "unit": "seconds",
     "interval": "600",
