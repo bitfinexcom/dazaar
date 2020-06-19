@@ -1,22 +1,34 @@
-const Payment = require('../../dazaar-payment')
+const Payment = require('dazaar-payment')
 const hypercore = require('hypercore')
 const pump = require('pump')
 const market = require('../market')
 
 const lndOpts = {
-  lnddir: '.lnd-dir',
-  rpcPort: 'localhost:11009',
-  address: 'localhost:9731',
-  network: 'regtest',
-  implementation: 'lnd'
+  lnd: {
+    lnddir: '/Users/maf/dev/wip/dazaar-ln/lnd',
+    rpcPort: 'localhost:11009',
+    address: 'localhost:9731', // 9735 default
+    network: 'regtest',
+    implementation: 'lnd'
+  }
 }
 
 const cOpts = {
-  lightningdDir: 'c-lightning-dir',
-  address: 'localhost:9733',
-  network: 'regtest',
-  implementation: 'c-lightning'
+  lnd: {
+    lnddir: '/Users/maf/dev/wip/dazaar-ln/lnd-remote-peer',
+    rpcPort: 'localhost:12009',
+    address: 'localhost:9730',
+    network: 'regtest',
+    implementation: 'lnd'
+  }
 }
+
+// const cOpts = {
+//   lightningdDir: 'c-lightning-dir',
+//   address: 'localhost:9733',
+//   network: 'regtest',
+//   implementation: 'c-lightning'
+// }
 
 const paymentCard = {
   payto: 'dazaartest22',
@@ -50,6 +62,14 @@ seller.ready(function (err) {
   sellerLnd = new Payment(seller, [paymentCard], cOpts)
   buyerLnd = new Payment(buyer, [paymentCard], lndOpts)
 
+  buyer.on('valid', function (info) {
+    console.log('now valid -->', info)
+  })
+
+  buyer.on('invalid', function (info) {
+    console.log('now invalid -->', info)
+  })
+
   buyer.on('validate', function () {
     console.log('remote validated us')
   })
@@ -68,10 +88,10 @@ seller.ready(function (err) {
   })
 
   // buying flow
-  buyerLnd.buy(null, 2000, null, function (err) {
-    if (err) console.error(err)
+  buyerLnd.buy(seller, 2000, null, function (err) {
+    if (err) return console.error(err)
     sellerLnd.validate(buyer.key, function (err, info) {
-      if (err) console.error(err)
+      if (err) return console.error(err)
       console.log(info.type + 'remaining:' + info.remaining)
     })
   })
