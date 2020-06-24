@@ -338,6 +338,17 @@ swarm(seller) // swarms the seller
 Create a new [`hyperswarm`][hyperswarm] for a `buyer` or `seller`, optionally
 passing a `onerror` handling function and `opts` to pass to `hyperswarm`.
 
+## CLI
+
+There is a small CLI available as well to help you buy, sell, and replicate Hypercores
+using the command line with a couple of payment options bundled in.
+
+You can read more about it in the CLI repo, https://github.com/bitfinexcom/dazaar-cli
+
+```
+npm install -g @dazaar/cli
+```
+
 ## License
 
 MIT
