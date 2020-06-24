@@ -5,7 +5,7 @@
 > Marketplace for selling and buying `hypercores`
 
 ```
-npm install dazaar
+npm install @dazaar/sdk
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ First setup a seller
 ```js
 const hypercore = require('hypercore')
 const pump = require('pump')
-const market = require('dazaar/market')
+const market = require('@dazaar/sdk')
 
 const m = market('./tmp')
 

@@ -1,6 +1,6 @@
 {
-  "name": "dazaar",
-  "version": "1.0.0",
+  "name": "@dazaar/sdk",
+  "version": "1.0.1",
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
   "dependencies": {
@@ -28,7 +28,7 @@
     "type": "git",
     "url": "https://github.com/bitfinexcom/dazaar.git"
   },
-  "author": "Mathias Buus (@mafintosh)",
+  "author": "Dazaar Limited",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/bitfinexcom/dazaar/issues"
