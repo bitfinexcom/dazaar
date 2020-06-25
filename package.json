@@ -1,5 +1,5 @@
 {
-  "name": "@dazaar/sdk",
+  "name": "dazaar",
   "version": "1.0.1",
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
