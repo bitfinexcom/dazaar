@@ -1,6 +1,6 @@
 {
   "name": "dazaar",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Marketplace for selling and buying hypercores",
   "main": "market.js",
   "dependencies": {

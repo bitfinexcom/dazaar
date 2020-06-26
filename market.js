@@ -359,7 +359,6 @@ class Seller extends EventEmitter {
 
     this.feed = feed
     this.uniqueFeed = opts.uniqueFeed !== false
-    if (!this.uniqueFeed && opts.validate) throw new Error('Cannot set both uniqueFeed = false and validate')
     this.validate = opts.validate
     this.revalidate = opts.validateInterval || 1000
     this.info = null
