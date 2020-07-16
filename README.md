@@ -95,6 +95,8 @@ Options include:
 You can use [`random-access-corestore` (`rac`)][rac] to manage multiple
 named feeds.
 
+For more info on how to implement a validator see the ["Writing your own payment validator" section](#writing-your-own-payment-validator)
+
 #### `seller.buyers(cb)`
 
 Get a list of all the buyers of this feed
@@ -337,6 +339,47 @@ swarm(seller) // swarms the seller
 
 Create a new [`hyperswarm`][hyperswarm] for a `buyer` or `seller`, optionally
 passing a `onerror` handling function and `opts` to pass to `hyperswarm`.
+
+## Writing your own payment validator
+
+To write your own payment validator you need to implement the validate function that is passed
+to the Dazaar seller or buyer instance. This function is called every ~1s to validate whether
+or not the current remote buyer or seller is valid.
+
+The validate function is called with the following signature
+
+```js
+function validate (remotePublicKey, done) {
+  // call done(null) if the public is valid
+  // otherwise call done(err)
+}
+```
+
+Basically inside the validate function you should validate against your payment processor
+or however you want to validate that that the session identified by your public key (i.e. `seller.key`) and
+the remote public key is currently valid.
+
+As an example if using a blockchain that supports adding metadata to a payment then
+you can include the following metadata to indicate that this payment was for this session:
+
+```
+dazaar: <seller-public-key-in-hex> <buyer-public-key-in-hex>
+```
+
+Then in the validate function you'd list all payments matching the above metadata, and
+track when they were performed. If you add them together in relation with the their relative
+timestamps and substract the current pricing in terms of "stream cost per time interval",
+then you can calcuate whether or not their current session is paid for or if the other side
+needs to perform a payment.
+
+If paid for, again you indicate that by calling `validate(null)` and if not `validate(new Error('Needs payment'))`
+or a similar error.
+
+This simple system makes Dazaar flexible in regards to payments. You can choose to validate the peers
+any way you want. For example even a scheme like payment through Twitter posts could be enabled.
+
+There is a series of implemented payment providers available through the [@dazaar/payment] module as well.
+You can read more about that [here](https://github.com/bitfinexcom/dazaar-payment).
 
 ## CLI
 
