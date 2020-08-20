@@ -1,4 +1,4 @@
-const Payment = require('dazaar-payment')
+const Payment = require('@dazaar/payment')
 const hypercore = require('hypercore')
 const pump = require('pump')
 const market = require('../market')

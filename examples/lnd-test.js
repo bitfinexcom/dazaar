@@ -1,6 +1,6 @@
 const test = require('tape')
 const hypercore = require('hypercore')
-const Payment = require('dazaar-payment')
+const Payment = require('@dazaar/payment')
 const dazaar = require('../')
 const pump = require('pump')
 

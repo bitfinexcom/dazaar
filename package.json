@@ -18,6 +18,7 @@
     "thunky": "^1.0.3"
   },
   "devDependencies": {
+    "@dazaar/payment": "^1.0.1",
     "standard": "^14.3.0",
     "tape": "^4.13.2"
   },
