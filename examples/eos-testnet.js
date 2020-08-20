@@ -1,7 +1,7 @@
 const dazaar = require('../')
 const hypercore = require('hypercore')
 const Payment = require('@dazaar/payment')
-const swarm = require('dazaar/swarm')
+const swarm = require('../swarm') // dazaar/swarm
 
 const feed = hypercore('eos-dazaar/some-data-we-are-selling')
 
