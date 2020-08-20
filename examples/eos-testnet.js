@@ -25,7 +25,7 @@ seller.ready(function () {
   const card = {
     id: seller.key.toString('hex'),
     payment: [
-      { payTo: 'dazaartest22', currency: 'EOS', amount: '0.0001', unit: 'seconds', interval: 1 }
+      { payTo: 'dazaartest22', currency: 'EOS Testnet', amount: '0.0001', unit: 'seconds', interval: 1 }
     ]
   }
 
