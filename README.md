@@ -190,11 +190,13 @@ Emitted when a remote peer has disconnected.
 
 An array of all remote connected peers.
 
-#### `const buyer = market.buy(sellerKey, [options])`
+#### `const buyer = market.buy(sellerKey|dazaarCard, [options])`
 
 Buy a hypercore by creating a buyer instance.
 It is expected that the remote seller can verify that you purchased
 the data through a third party some how.
+
+If a `sellerKey` is used, it must be a Buffer.
 
 Options include:
 

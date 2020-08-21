@@ -129,6 +129,11 @@ class Market extends EventEmitter {
   }
 
   buy (seller, opts) {
+    // support for dazaar cards
+    if (!Buffer.isBuffer(seller)) {
+      seller = Buffer.from(seller.id, 'hex')
+    }
+
     return new Buyer(this, this._db, seller, opts)
   }
 }
