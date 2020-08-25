@@ -58,7 +58,7 @@ seller.ready(function (err) {
 
 ## API
 
-#### `const market = dazaar(storage)`
+#### `const market = dazaar(storage, [options])`
 
 Create a new dazaar instance. Pass a `string` if you want to use the default
 file storage or a [`random-access-storage`][ras] compatible `storage`.
@@ -66,6 +66,21 @@ Examples include (but not limited to):
  - [`random-access-file` (`raf`)][raf]
  - [`random-access-memory` (`ram`)][ram]
  - [`random-access-web` (`raw`)][raw]
+
+Options include:
+
+```js
+{
+  masterKey: <32-byte-master-key>
+}
+```
+
+If you set the master key all future key pairs, hypercore keys will be derived deterministicly from
+that.
+
+#### `const masterKey = dazaar.masterKey()`
+
+Generate a new master key.
 
 #### `const seller = market.sell(feed, options)`
 

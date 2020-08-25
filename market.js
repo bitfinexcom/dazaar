@@ -10,6 +10,11 @@ const Protocol = require('hypercore-protocol')
 const derive = require('derive-key')
 
 exports = module.exports = (storage, opts) => new Market(storage, opts)
+exports.masterKey = masterKey
+
+function masterKey () {
+  return crypto.randomBytes(32)
+}
 
 exports.isSeller = function (s) {
   return s instanceof Seller
@@ -30,6 +35,8 @@ class Market extends EventEmitter {
     const self = this
 
     this.masterKey = (opts && opts.masterKey) || null
+    if (typeof this.masterKey === 'string') this.masterKey = Buffer.from(this.masterKey, 'hex')
+
     this.ready = thunky(this._ready.bind(this))
     this.ready(function (err) {
       if (err) self.emit('error', err)
