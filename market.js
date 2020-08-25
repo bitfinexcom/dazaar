@@ -1,4 +1,3 @@
-const stream = require('stream')
 const hypertrie = require('hypertrie')
 const hypercore = require('hypercore')
 const crypto = require('hypercore-crypto')
@@ -545,7 +544,7 @@ class Seller extends EventEmitter {
         function onvalidate (err, info) {
           if (err) return setUploading(err, null)
           getUniqueFeed(function (err, feed) {
-            if (err) return stream.destroy(err)
+            if (err) return p.destroy(err)
             if (!uniqueFeed) {
               uniqueFeed = feed
               oneTimeFeed.send(feed.key)
