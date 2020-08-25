@@ -334,6 +334,10 @@ Get a list of hypercores and their corresponding sales key you are buying (since
 
 Helper to determine if an instance is a buyer.
 
+#### `const { publicKey, secretKey } = market.deriveHypercoreKeyPair(id)`
+
+Derive a ED25519 keypair that can uses for a hypercore off the master key.
+
 #### `market.destroy([cb])`
 
 Destroy the market instance. Closes internal state needed for the buyer and sellers.

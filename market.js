@@ -69,6 +69,11 @@ class Market extends EventEmitter {
     })
   }
 
+  deriveHypercoreKeyPair (id) {
+    if (!this.masterKey) throw new Error('Master key not loaded. Call ready() first.')
+    return crypto.keyPair(derive('dazaar', this.masterKey, 'hypercore-seed/' + id))
+  }
+
   _ready (cb) {
     const self = this
 
