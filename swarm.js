@@ -22,7 +22,10 @@ function swarm (m, onjoin, opts) {
   const announce = market.isSeller(m)
   const lookup = !announce
 
-  m.ready(() => swarm.join(m.discoveryKey, { announce, lookup }, onjoin))
+  m.ready(() => {
+    if (announce && !m.uniqueFeed) swarm.join(m.feed.discoveryKey, { announce, lookup })
+    swarm.join(m.discoveryKey, { announce, lookup }, onjoin)
+  })
   m._swarm = swarm
 
   return swarm
