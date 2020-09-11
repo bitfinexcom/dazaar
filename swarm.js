@@ -23,7 +23,7 @@ function swarm (m, onjoin, opts) {
   const lookup = !announce
 
   m.ready(() => {
-    if (announce && !m.uniqueFeed) swarm.join(m.feed.discoveryKey, { announce, lookup })
+    if (announce && m.uniqueFeed === false) swarm.join(m.feed.discoveryKey, { announce, lookup })
     swarm.join(m.discoveryKey, { announce, lookup }, onjoin)
   })
   m._swarm = swarm
