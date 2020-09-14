@@ -48,6 +48,7 @@ function swarm (m, onjoin, opts) {
   }
 
   m.ready(() => {
+    if (announce && m.uniqueFeed === false) swarm.join(m.feed.discoveryKey, { announce, lookup })
     swarm.join(m.discoveryKey, { announce, lookup }, onjoin)
     swarm.flush(() => {
       allConnections.emit()

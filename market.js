@@ -513,6 +513,15 @@ class Seller extends EventEmitter {
           done(null, self._keyPair)
         })
       },
+      ondiscoverykey (discoveryKey) {
+        if (self.uniqueFeed) return p.close(discoveryKey)
+        // is free!
+        getUniqueFeed(function (err, feed) {
+          if (err || !discoveryKey.equals(feed.discoveryKey) || !p.remoteVerified(feed.key)) return p.close(discoveryKey)
+          if (p.opened(feed.key)) return
+          feed.replicate(p, { live: true })
+        })
+      },
       onauthenticate (remotePublicKey, done) {
         done()
       },
@@ -560,7 +569,7 @@ class Seller extends EventEmitter {
             if (!uniqueFeed) {
               uniqueFeed = feed
               oneTimeFeed.send(feed.key)
-              uniqueFeed.replicate(p, { live: true })
+              if (!p.opened(uniqueFeed.key)) uniqueFeed.replicate(p, { live: true })
             }
             setUploading(null, info)
           })
