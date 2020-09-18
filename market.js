@@ -167,6 +167,7 @@ class Buyer extends EventEmitter {
     this._receiving = new Map()
     this._sendable = new Set()
     this._swarm = null
+    this._tos = opts.termsOfService || opts.tos || ''
 
     const self = this
 
@@ -279,6 +280,22 @@ class Buyer extends EventEmitter {
       }
     })
 
+    p.registerExtension('dazaar/terms-of-service', {
+      encoding: 'utf-8',
+      onmessage (terms) {
+        if (!self._tos) {
+          self.emit('error', new Error('Terms of service must be accepted before data can be replicated'))
+          self.destroy()
+          return
+        }
+        if (self._tos.trim() !== terms.trim()) {
+          self.emit('error', new Error('Terms of service updated, new terms must be accepted before data can be replicated'))
+          self.destroy()
+          return
+        }
+      }
+    })
+
     p.registerExtension('dazaar/one-time-feed', {
       onmessage (uniqueFeed) {
         const feed = self._setFeed(uniqueFeed)
@@ -380,6 +397,7 @@ class Seller extends EventEmitter {
     this.info = null
     this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
+    this.tos = opts.termsOfService || opts.tos || ''
 
     if (!this.uniqueFeed) {
       this.validate = (remoteKey, done) => done(null, { free: true })
@@ -603,7 +621,12 @@ class Seller extends EventEmitter {
       }
     })
 
+    const tos = p.registerExtension('dazaar/terms-of-service', {
+      encoding: 'utf-8'
+    })
+
     id.send(this.sellerId)
+    if (this.tos) tos.send(this.tos)
     registerUserMessage(this, p)
 
     p.on('close', function () {
