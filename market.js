@@ -167,7 +167,7 @@ class Buyer extends EventEmitter {
     this._receiving = new Map()
     this._sendable = new Set()
     this._swarm = null
-    this._tos = opts.termsOfService || opts.tos || ''
+    this._tou = opts.terms || opts.termsOfUse || opts.tou || ''
 
     const self = this
 
@@ -280,16 +280,16 @@ class Buyer extends EventEmitter {
       }
     })
 
-    p.registerExtension('dazaar/terms-of-service', {
+    p.registerExtension('dazaar/terms-of-use', {
       encoding: 'utf-8',
       onmessage (terms) {
-        if (!self._tos) {
-          self.emit('error', new Error('Terms of service must be accepted before data can be replicated'))
+        if (!self._tou) {
+          self.emit('error', new Error('Terms of Use must be accepted before data can be replicated'))
           self.destroy()
           return
         }
-        if (self._tos.trim() !== terms.trim()) {
-          self.emit('error', new Error('Terms of service updated, new terms must be accepted before data can be replicated'))
+        if (self._tou.trim() !== terms.trim()) {
+          self.emit('error', new Error('Terms of Use updated, new terms must be accepted before data can be replicated'))
           self.destroy()
           return
         }
@@ -397,7 +397,7 @@ class Seller extends EventEmitter {
     this.info = null
     this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
-    this.tos = opts.termsOfService || opts.tos || ''
+    this.tou = opts.terms || opts.termsOfUse || opts.tou || ''
 
     if (!this.uniqueFeed) {
       this.validate = (remoteKey, done) => done(null, { free: true })
@@ -621,12 +621,12 @@ class Seller extends EventEmitter {
       }
     })
 
-    const tos = p.registerExtension('dazaar/terms-of-service', {
+    const tou = p.registerExtension('dazaar/terms-of-use', {
       encoding: 'utf-8'
     })
 
     id.send(this.sellerId)
-    if (this.tos) tos.send(this.tos)
+    if (this.tou) tou.send(this.tou)
     registerUserMessage(this, p)
 
     p.on('close', function () {
