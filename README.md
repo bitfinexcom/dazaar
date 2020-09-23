@@ -8,6 +8,8 @@
 npm install dazaar
 ```
 
+Learn more about Dazaar in our [intro blogpost](https://blog.dazaar.com/2020/09/12/introducing-dazaar/) and [whitepaper](./docs/whitepaper.md).
+
 ## Usage
 
 First setup a seller
