@@ -27,8 +27,10 @@ class Market extends EventEmitter {
   constructor (storage, opts) {
     super()
 
+    const feed = opts && opts.feed
+
     this._storage = typeof storage === 'function' ? storage : defaultStorage
-    this._db = hypertrie(name => this._storage('db/' + name), { valueEncoding: 'json' })
+    this._db = hypertrie(name => this._storage('db/' + name), { valueEncoding: 'json', feed })
     this._keyPair = null
 
     const self = this
@@ -291,7 +293,6 @@ class Buyer extends EventEmitter {
         if (self._tou.trim() !== terms.trim()) {
           self.emit('error', new Error('Terms of Use updated, new terms must be accepted before data can be replicated'))
           self.destroy()
-          return
         }
       }
     })
