@@ -754,6 +754,7 @@ function updateCard (db, key, card, cb) {
     const oldCard = node && node.value
     if (!oldCard) return put()
     if (!card || card.version <= oldCard.version) return cb(null, oldCard)
+    if (JSON.stringify(card) === JSON.stringify(oldCard)) return cb(null, oldCard)
     put()
   })
 
