@@ -105,7 +105,9 @@ Options include:
   validateInterval: 1000,
   // Set uniqueFeed to false to generate the same Hypercore feed for each
   // buyer. Should only be used for free Hypercores (defaults to true)
-  uniqueFeed: true
+  uniqueFeed: true,
+  // Set the Dazaar card you use here (minus the id) to have it be persisted
+  // inside the Dazaar instance. Useful if you wanna see it later when listing buyers etc.
 }
 ```
 
@@ -127,6 +129,10 @@ Emitted when the seller is fully ready and has loaded it's keypair
 Call `cb` when the `seller` object is fully initialised, optionally with an
 `error`. Similar to the event, but will call immediately if the event has
 already fired.
+
+#### `seller.card`
+
+The persisted Dazaar card for the seller. Updated after ready.
 
 #### `seller.on('buyer-validate', remoteKey)`
 

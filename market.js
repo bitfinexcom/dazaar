@@ -127,12 +127,21 @@ class Market extends EventEmitter {
 
       loop(null, null)
 
-      function loop (err, node) {
+      function loop (key, card) {
         if (err) return cb(err)
-        if (node) list.push({ key: decodeKeys(node.value).publicKey, feed: feeds[list.length] })
+        if (key) list.push({ key, card, feed: feeds[list.length] })
         if (list.length === feeds.length) return cb(null, list)
         const feed = feeds[list.length]
-        self._db.get('sales/' + feed.toString('hex') + '/key-pair', loop)
+
+        self._db.get('sales/' + feed.toString('hex') + '/key-pair', function (err, keyPair) {
+          if (err) return cb(err)
+          if (!keyPair) return loop(null, null)
+
+          self._db.get('sales/' + feed.toString('hex') + '/card', function (err, card) {
+            if (err) return cb(err)
+            loop(keyPair && decodeKeys(keyPair.value).publicKey, card && card.value)
+          })
+        })
       }
     })
   }
@@ -398,6 +407,7 @@ class Seller extends EventEmitter {
     this.info = null
     this.sellerId = crypto.randomBytes(32)
     this.destroyed = false
+    this.card = { id: null, ...opts.card }
     this.tou = opts.terms || opts.termsOfUse || opts.tou || ''
 
     if (!this.uniqueFeed) {
@@ -405,6 +415,7 @@ class Seller extends EventEmitter {
     }
 
     this._db = db
+    this._passedCard = !!opts.card
     this._market = market
     this._keyPair = null
     this._receiving = new Map()
@@ -462,10 +473,16 @@ class Seller extends EventEmitter {
     this.feed.ready(function (err) {
       if (err) return cb(err)
       const key = 'sales/' + self.feed.key.toString('hex') + '/key-pair'
+      const cardKey = 'sales/' + self.feed.key.toString('hex') + '/card'
       loadKey(self._market, self._db, key, function (err, kp) {
         if (err) return cb(err)
         self._keyPair = kp
-        cb(null)
+        self.card.id = kp.publicKey.toString('hex')
+        updateCard(self._db, cardKey, self._passedCard ? self.card : null, function (err, card) {
+          if (err) return cb(err)
+          if (card) self.card = card
+          cb(null)
+        })
       })
     })
   }
@@ -729,6 +746,23 @@ function loadKey (market, db, key, cb) {
       })
     })
   })
+}
+
+function updateCard (db, key, card, cb) {
+  db.get(key, function (err, node) {
+    if (err) return cb(err)
+    const oldCard = node && node.value
+    if (!oldCard) return put()
+    if (!card || card.version <= oldCard.version) return cb(null, oldCard)
+    put()
+  })
+
+  function put () {
+    db.put(key, card, function (err) {
+      if (err) return cb(err)
+      cb(null, card)
+    })
+  }
 }
 
 function requireMaybe (name) {
