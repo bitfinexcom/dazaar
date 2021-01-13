@@ -146,6 +146,23 @@ class Market extends EventEmitter {
     })
   }
 
+  sales (key, cb) {
+    const list = []
+    const ite = this._db.iterator('sales/' + key.toString('hex') + '/feeds')
+
+    ite.next(function loop (err, node) {
+      if (err) return cb(err)
+      if (!node) return cb(null, list)
+
+      list.push({
+        buyer: Buffer.from(node.value.buyer, 'hex'),
+        uniqueFeed: decodeKeys(node.value.uniqueFeed)
+      })
+
+      ite.next(loop)
+    })
+  }
+
   sell (feed, opts) {
     return new Seller(this, this._db, feed, opts)
   }

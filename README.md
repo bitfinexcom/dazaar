@@ -332,6 +332,11 @@ An array of all remote connected peers.
 
 Get a list of the hypercores and their corresponding sales key you are selling (since you created the market).
 
+#### `market.sales(feedKey, callback)`
+
+Get a list of sales you did for a specific feed. Similar to doing `seller.buyers`.
+Note that "free" feeds, ie a seller with uniqueFeed turned off will not track the sales.
+
 #### `const bool = market.isSeller(instance)`
 
 Helper to determine if an instance is a seller.
