@@ -168,6 +168,10 @@ class Market extends EventEmitter {
   }
 
   buy (seller, opts) {
+    if (typeof seller === 'string') {
+      seller = Buffer.from(seller, 'hex')
+    }
+
     // support for dazaar cards
     if (!Buffer.isBuffer(seller)) {
       seller = Buffer.from(seller.id, 'hex')
