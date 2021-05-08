@@ -47,9 +47,10 @@ class Market extends EventEmitter {
 
     function defaultStorage (name) {
       const lock = name === 'db/bitfield' ? requireMaybe('fd-lock') : null
-      if (typeof process !== 'undefined')
-        return raf(name, { directory: storage, lock })
-      else return racf(name, { directory: storage, lock })
+      if (typeof window !== 'undefined') {
+        return racf(name, {directory: storage, lock})
+      }
+      else return raf(name, { directory: storage, lock })
     }
   }
 
