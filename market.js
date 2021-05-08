@@ -3,7 +3,7 @@ const hypercore = require('hypercore')
 const crypto = require('hypercore-crypto')
 const multikey = require('hypercore-multi-key')
 const raf = require('random-access-file')
-const racf = require('random-access-chrome-file')
+const ram = require('random-access-memory')
 const thunky = require('thunky')
 const { EventEmitter } = require('events')
 const Protocol = require('hypercore-protocol')
@@ -48,7 +48,7 @@ class Market extends EventEmitter {
     function defaultStorage (name) {
       const lock = name === 'db/bitfield' ? requireMaybe('fd-lock') : null
       if (typeof window !== 'undefined') {
-        return racf(name, {directory: storage, lock})
+        return ram(name, {directory: storage, lock})
       }
       else return raf(name, { directory: storage, lock })
     }
