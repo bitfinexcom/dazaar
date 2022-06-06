@@ -246,7 +246,7 @@ selling peer (S).
 The seller will verify that the public key sent by the buyer B, is
 authorised to connect. If the buyer is not authorised, Dazaar will send an
 appropriate error message to the buyer with the reason. Note even if one of
-the two parties sent public keys they did not posses the corresponding secret
+the two parties sent public keys they did not possess the corresponding secret
 key for, they will not be able to read any messages. This is due to the nature
 of Noise, due to the Diffie-Hellman key exchange algorithm.
 
